@@ -5,6 +5,7 @@ import InventoryScreen from './components/InventoryScreen';
 import CustomerScreen from './components/CustomerScreen';
 import ReportsScreen from './components/ReportsScreen';
 import SettingsScreen from './components/SettingsScreen';
+import PaymentProcessing from './components/PaymentProcessing';
 import ToastContainer from './components/ToastContainer';
 
 function App() {
@@ -14,6 +15,8 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [isOnline] = useState(true);
   
   // Filter products based on search and category
@@ -67,15 +70,32 @@ function App() {
     return `KES ${amount.toFixed(2)}`;
   };
 
-  // Handle payment
-  const handlePayment = (method) => {
+  // Handle payment method selection
+  const handlePaymentMethod = (method) => {
+    setSelectedPaymentMethod(method);
     setShowPaymentModal(false);
-    // Simulate payment processing
-    setTimeout(() => {
-      window.showToast(`Payment of ${formatCurrency(total)} processed via ${method}`, 'success');
-      setCart([]);
-      setSelectedCustomer(null);
-    }, 1500);
+    setShowPaymentProcessing(true);
+  };
+
+  // Handle payment completion
+  const handlePaymentComplete = (paymentResult) => {
+    setShowPaymentProcessing(false);
+    window.showToast(`Payment of ${formatCurrency(total)} processed via ${paymentResult.method}`, 'success');
+    setCart([]);
+    setSelectedCustomer(null);
+    setSelectedPaymentMethod('');
+  };
+
+  // Handle payment processing close
+  const handlePaymentProcessingClose = () => {
+    setShowPaymentProcessing(false);
+    setSelectedPaymentMethod('');
+  };
+
+  // Handle back to payment methods
+  const handleBackToPaymentMethods = () => {
+    setShowPaymentProcessing(false);
+    setShowPaymentModal(true);
   };
 
   // Navigation component
@@ -353,8 +373,10 @@ function App() {
   );
 
   // Payment Modal
-  const PaymentModal = () => (
-    showPaymentModal && (
+  const PaymentModal = () => {
+    if (!showPaymentModal) return null;
+    
+    return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-up">
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -375,7 +397,7 @@ function App() {
 
             <div className="space-y-3">
               <button
-                onClick={() => handlePayment('cash')}
+                onClick={() => handlePaymentMethod('cash')}
                 className="w-full flex items-center space-x-4 p-4 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all group"
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-primary-100 transition-colors">
@@ -393,7 +415,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => handlePayment('mpesa')}
+                onClick={() => handlePaymentMethod('mpesa')}
                 className="w-full flex items-center space-x-4 p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group"
               >
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -411,7 +433,7 @@ function App() {
               </button>
               
               <button
-                onClick={() => handlePayment('card')}
+                onClick={() => handlePaymentMethod('card')}
                 className="w-full flex items-center space-x-4 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
               >
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -431,8 +453,8 @@ function App() {
           </div>
         </div>
       </div>
-    )
-  );
+    );
+  };
 
   // Render current view
   const renderCurrentView = () => {
@@ -466,6 +488,15 @@ function App() {
         </div>
       )}
       <ToastContainer />
+      {showPaymentProcessing && (
+        <PaymentProcessing
+          method={selectedPaymentMethod}
+          amount={total}
+          onClose={handlePaymentProcessingClose}
+          onComplete={handlePaymentComplete}
+          onBack={handleBackToPaymentMethods}
+        />
+      )}
     </div>
   );
 }
