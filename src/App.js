@@ -257,31 +257,31 @@ function App() {
       {/* Right Panel - Cart */}
       <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
         {/* Cart Header */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Current Sale</h2>
+        <div className="p-3 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-semibold text-gray-900">Current Sale</h2>
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                className="text-xs text-red-600 hover:text-red-700 font-medium"
               >
-                Clear Cart
+                Clear
               </button>
             )}
           </div>
 
           {/* Customer Selection */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Customer:</span>
+            <span className="text-xs text-gray-600">Customer:</span>
             <select
               value={selectedCustomer || ''}
               onChange={(e) => setSelectedCustomer(e.target.value || null)}
-              className="flex-1 input text-sm"
+              className="flex-1 input text-xs"
             >
-              <option value="">Walk-in Customer</option>
+              <option value="">Walk-in</option>
               {customers.map(customer => (
                 <option key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.phone}
+                  {customer.name}
                 </option>
               ))}
             </select>
@@ -289,48 +289,48 @@ function App() {
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3">
           {cart.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingCart className="text-gray-400" size={32} />
+            <div className="text-center py-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <ShoppingCart className="text-gray-400" size={24} />
               </div>
-              <p className="text-gray-500 font-medium">Cart is empty</p>
-              <p className="text-sm text-gray-400 mt-2">Add products to start sale</p>
+              <p className="text-gray-500 text-sm font-medium">Cart is empty</p>
+              <p className="text-xs text-gray-400 mt-1">Add products to start sale</p>
             </div>
           ) : (
-            <div className="space-y-3 pb-4">
+            <div className="space-y-2 pb-3">
               {cart.map(item => (
-                <div key={item.id} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
+                <div key={item.id} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 text-sm mb-1">{item.name}</h4>
-                      <p className="text-sm text-gray-600">{formatCurrency(item.price)} each</p>
+                      <h4 className="font-medium text-gray-900 text-xs mb-1">{item.name}</h4>
+                      <p className="text-xs text-gray-600">{formatCurrency(item.price)} each</p>
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
-                        className="w-9 h-9 rounded-lg bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        className="w-7 h-7 rounded bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                       >
-                        <Minus size={16} />
+                        <Minus size={12} />
                       </button>
-                      <span className="w-12 text-center font-semibold text-gray-900">{item.quantity}</span>
+                      <span className="w-8 text-center font-semibold text-gray-900 text-sm">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="w-9 h-9 rounded-lg bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        className="w-7 h-7 rounded bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                       >
-                        <Plus size={16} />
+                        <Plus size={12} />
                       </button>
                     </div>
-                    <p className="font-bold text-lg text-primary-600">{formatCurrency(item.total)}</p>
+                    <p className="font-bold text-sm text-primary-600">{formatCurrency(item.total)}</p>
                   </div>
                 </div>
               ))}
@@ -339,31 +339,31 @@ function App() {
         </div>
 
         {/* Cart Summary - Fixed at bottom */}
-        <div className="border-t border-gray-200 bg-white shadow-lg">
+        <div className="border-t border-gray-200 bg-white shadow-sm">
           {cart.length === 0 ? (
-            <div className="p-4">
-              <p className="text-center text-gray-500 text-sm">Add items to cart to proceed</p>
+            <div className="p-3">
+              <p className="text-center text-gray-500 text-xs">Add items to proceed</p>
             </div>
           ) : (
-            <div className="p-4 space-y-4 bg-gradient-to-t from-gray-50 to-white">
-              <div className="flex justify-between text-sm">
+            <div className="p-3 space-y-3 bg-gradient-to-t from-gray-50 to-white">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Tax (10%)</span>
                 <span className="font-medium">{formatCurrency(tax)}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
+              <div className="flex justify-between text-sm font-bold pt-2 border-t border-gray-200">
                 <span>Total</span>
                 <span className="text-primary-600">{formatCurrency(total)}</span>
               </div>
               
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="w-full btn btn-primary btn-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
+                className="w-full btn btn-primary btn-md font-medium shadow hover:shadow-md transition-shadow"
               >
-                Proceed to Payment
+                Pay Now
               </button>
             </div>
           )}
