@@ -170,6 +170,14 @@ button{font-weight:600}.card h4,.fl{font-weight:700;letter-spacing:.09em}
 .mh{padding:1.5rem 1.5rem 1.1rem}.mt{padding:0 1.5rem}.mb{padding:1.5rem;gap:1.25rem}.mod .ft{padding:1.1rem 1.5rem}
 .rok{padding:1rem 1.1rem}.paper{padding:1.75rem 1.5rem;gap:.7rem}.bn{padding:.65rem 1rem;line-height:1.45}
 .seg button{padding:0 .9rem}
+select{font:inherit;font-size:max(16px,1rem);color:inherit;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rs);min-height:2.8rem;padding:0 .8rem;width:100%}
+select:focus{outline:2px solid var(--act);outline-offset:1px}
+.badge{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:var(--rs);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.b-rec{background:rgba(29,122,75,.15);color:var(--ok)}
+.b-sale{background:var(--acs);color:var(--act)}
+.b-adj{background:rgba(184,137,58,.15);color:var(--gd)}
+.b-take{background:rgba(108,104,114,.15);color:var(--mu)}
+.b-open{background:var(--tile);color:var(--mu);border:1px solid var(--bd)}
 .tab-tbl{width:100%;border-collapse:collapse;text-align:left;font-size:.9rem}
 .tab-tbl th{padding:.55rem .4rem;color:var(--mu);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bd)}
 .tab-tbl td{padding:.6rem .4rem;border-bottom:1px solid var(--bd)}
@@ -212,24 +220,47 @@ function toBaseUnits(p, u, qty) {
   return Math.round(qty);
 }
 
-// Initial opening stock movements for the append-only ledger (integer quantities in base units)
-const initialMovements = RAW_CATALOG.map((a, i) => {
-  const tn = a[5];
-  const btlStock = a[7];
-  const baseQty = tn > 0 ? Math.round(btlStock * tn) : Math.round(btlStock);
-  return {
-    id: `mov_init_${i + 1}`,
-    productId: i,
-    type: "opening",
-    qty: baseQty,
-    unit: "b",
-    unitQty: btlStock,
-    ref: "OPEN-STOCK",
-    note: "Initial opening stock",
-    user: "System",
-    at: new Date(Date.now() - 3600 * 1000 * 8)
-  };
-});
+// Initial opening and realistic seeded stock movements for the append-only ledger
+const openingMovements = [
+  { id: "mov_init_1", productId: 0, type: "opening", qty: 65, unit: "b", unitQty: 65, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_2", productId: 1, type: "opening", qty: 32, unit: "b", unitQty: 32, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_3", productId: 2, type: "opening", qty: 62, unit: "b", unitQty: 62, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_4", productId: 3, type: "opening", qty: 25, unit: "b", unitQty: 1, ref: "OPEN-STOCK", note: "Opening inventory balance (1 btl)", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_5", productId: 4, type: "opening", qty: 350, unit: "b", unitQty: 14, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_6", productId: 5, type: "opening", qty: 75, unit: "b", unitQty: 3, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_7", productId: 6, type: "opening", qty: 475, unit: "b", unitQty: 19, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_8", productId: 7, type: "opening", qty: 1000, unit: "b", unitQty: 40, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_9", productId: 8, type: "opening", qty: 400, unit: "b", unitQty: 16, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_10", productId: 9, type: "opening", qty: 275, unit: "b", unitQty: 11, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_11", productId: 10, type: "opening", qty: 1125, unit: "b", unitQty: 45, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_12", productId: 11, type: "opening", qty: 225, unit: "b", unitQty: 9, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_13", productId: 12, type: "opening", qty: 100, unit: "b", unitQty: 4, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_14", productId: 13, type: "opening", qty: 300, unit: "b", unitQty: 12, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_15", productId: 14, type: "opening", qty: 26, unit: "b", unitQty: 26, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_16", productId: 15, type: "opening", qty: 2, unit: "b", unitQty: 2, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") },
+  { id: "mov_init_17", productId: 16, type: "opening", qty: 10, unit: "b", unitQty: 10, ref: "OPEN-STOCK", note: "Opening inventory balance", user: "System", at: new Date("2026-10-17T06:00:00") }
+];
+
+const initialMovements = [
+  ...openingMovements,
+  // 1. Inward Goods Receipts from Distributors (creates receipt movements)
+  { id: "mov_rec_1", productId: 0, type: "receipt", qty: 120, unit: "c", unitQty: 5, ref: "EABL-PO-8821", buyingPrice: 4800, supplier: "East African Breweries Ltd (EABL)", note: "Received 5 Ctn (120 btl) from EABL", user: "Owner", at: new Date("2026-10-17T08:15:00") },
+  { id: "mov_rec_2", productId: 1, type: "receipt", qty: 48, unit: "c", unitQty: 2, ref: "EABL-PO-8821", buyingPrice: 5760, supplier: "East African Breweries Ltd (EABL)", note: "Received 2 Ctn (48 btl) from EABL", user: "Owner", at: new Date("2026-10-17T08:15:00") },
+  { id: "mov_rec_3", productId: 3, type: "receipt", qty: 300, unit: "c", unitQty: 2, ref: "UDV-DN-4402", buyingPrice: 23000, supplier: "UDV Kenya (Diageo)", note: "Received 2 Ctn (12 btl = 300 tots) from UDV", user: "Owner", at: new Date("2026-10-17T09:00:00") },
+
+  // 2. Sales Ledger Deductions (matching top sellers & seed revenue)
+  { id: "mov_sale_1", productId: 0, type: "sale", qty: -64, unit: "b", unitQty: 64, ref: "INV-000101", note: "Morning batch sales (64 Btl)", user: "Cashier 1", at: new Date("2026-10-17T10:30:00") },
+  { id: "mov_sale_2", productId: 7, type: "sale", qty: -450, unit: "b", unitQty: 18, ref: "INV-000108", note: "Morning batch sales (18 Btl = 450 tots)", user: "Cashier 1", at: new Date("2026-10-17T11:15:00") },
+  { id: "mov_sale_3", productId: 10, type: "sale", qty: -375, unit: "b", unitQty: 15, ref: "INV-000112", note: "Morning batch sales (15 Btl = 375 tots)", user: "Cashier 1", at: new Date("2026-10-17T11:45:00") },
+  { id: "mov_sale_4", productId: 3, type: "sale", qty: -125, unit: "b", unitQty: 5, ref: "INV-000115", note: "Morning batch sales (5 Btl = 125 tots)", user: "Cashier 1", at: new Date("2026-10-17T12:10:00") },
+
+  // 3. Realistic Adjustments (Breakage & Damaged Goods with mandatory reasons)
+  { id: "mov_adj_1", productId: 6, type: "adjustment", qty: -25, unit: "b", unitQty: 1, reason: "breakage", ref: "ADJ-BRK-01", note: "Dropped during restocking shelf", user: "Owner", at: new Date("2026-10-17T13:20:00") },
+  { id: "mov_adj_2", productId: 2, type: "adjustment", qty: -2, unit: "b", unitQty: 2, reason: "expired", ref: "ADJ-EXP-01", note: "Damaged seal on delivery carton", user: "Owner", at: new Date("2026-10-17T13:50:00") },
+
+  // 4. Realistic Stock Take Variance
+  { id: "mov_take_1", productId: 0, type: "take", qty: -1, unit: "b", unitQty: 1, ref: "STK-TAKE-001", note: "Mid-day blind count variance (-1 btl)", user: "Owner", at: new Date("2026-10-17T14:10:00") }
+];
 
 // Central Application State
 const state = {
@@ -240,6 +271,44 @@ const state = {
   ageVerified: false,
   offline: false,
   syncCount: 0,
+  
+  // Stock Management State (Prompt 1)
+  stockTab: "overview", // "overview" | "receive" | "take" | "adjust" | "history"
+  stockFilter: "all", // "all" | "low"
+  stockSearch: "",
+  historySearch: "",
+  historyTypeFilter: "all", // "all" | "receipt" | "sale" | "adjustment" | "take" | "opening"
+  
+  suppliers: [
+    "East African Breweries Ltd (EABL)",
+    "UDV Kenya (Diageo)",
+    "Pernod Ricard Kenya",
+    "Wines of the World",
+    "Africa Spirits Ltd",
+    "KWAL (Kenya Wine Agencies)"
+  ],
+  
+  receiveDraft: {
+    supplier: "East African Breweries Ltd (EABL)",
+    invoiceRef: "",
+    lines: [
+      { productId: 0, unit: "c", qty: 2, cost: 4800 }
+    ]
+  },
+  
+  stockTakeDraft: {
+    mode: "blind", // "blind" | "review"
+    counts: {}
+  },
+  
+  adjustmentDraft: {
+    productId: 0,
+    unit: "b",
+    qty: 1,
+    direction: "loss", // "loss" | "gain"
+    reason: "breakage", // "breakage" | "theft" | "expired" | "gift" | "sampling" | "correction"
+    note: ""
+  },
   
   // Checkout & active modals
   payment: null,
@@ -637,55 +706,701 @@ function dash() {
 <div class="card s2"><h4>Voids &amp; discounts</h4><div class="row"><span>Void · Tusker ×2 · Cashier 1</span><small>14:05</small></div><div class="row"><span>10% off · JW Black · owner approved</span><small>12:40</small></div><div class="row"><span>Price override · Chrome Vodka</span><small>09:15</small></div></div></div>`;
 }
 
+// Stock Management Handlers (Prompt 1)
+function setStockTab(t) {
+  state.stockTab = t;
+  render();
+}
+
+function setStockFilter(f) {
+  state.stockFilter = f;
+  render();
+}
+
+function searchStock(q) {
+  state.stockSearch = q;
+  render();
+  keep("stk-search");
+}
+
+function searchHistory(q) {
+  state.historySearch = q;
+  render();
+  keep("hist-search");
+}
+
+function setHistoryFilter(f) {
+  state.historyTypeFilter = f;
+  render();
+}
+
+function quickReceive(productId) {
+  const p = state.products.find(x => x.id === productId);
+  state.receiveDraft.lines = [
+    { productId, unit: "c", qty: 2, cost: p ? p.cp : 4800 }
+  ];
+  state.stockTab = "receive";
+  render();
+}
+
+function quickAdjust(productId) {
+  state.adjustmentDraft.productId = productId;
+  state.stockTab = "adjust";
+  render();
+}
+
+function addReceiveLine() {
+  state.receiveDraft.lines.push({ productId: 0, unit: "c", qty: 1, cost: 4800 });
+  render();
+}
+
+function removeReceiveLine(idx) {
+  if (state.receiveDraft.lines.length > 1) {
+    state.receiveDraft.lines.splice(idx, 1);
+  }
+  render();
+}
+
+function updateReceiveLine(idx, field, val) {
+  const line = state.receiveDraft.lines[idx];
+  if (!line) return;
+  line[field] = val;
+  if (field === "productId") {
+    const p = state.products.find(x => x.id === val);
+    if (p) line.cost = line.unit === "c" ? p.cp : p.b;
+  }
+  if (field === "unit") {
+    const p = state.products.find(x => x.id === line.productId);
+    if (p) line.cost = val === "c" ? p.cp : p.b;
+  }
+  render();
+}
+
+function updateReceiveDraft(field, val) {
+  state.receiveDraft[field] = val;
+  render();
+  keep("rec-ref");
+}
+
+function submitReceiveGoods() {
+  if (!state.receiveDraft.lines.length) {
+    toast("No products in receipt");
+    return false;
+  }
+  const ref = state.receiveDraft.invoiceRef.trim() || ("REC-" + Math.random().toString(36).slice(2, 8).toUpperCase());
+  const supplier = state.receiveDraft.supplier || "Distributor";
+
+  for (const l of state.receiveDraft.lines) {
+    if (l.qty <= 0) continue;
+    const p = state.products.find(x => x.id === l.productId);
+    const baseDelta = toBaseUnits(p, l.unit, l.qty);
+    recordStockMovement({
+      id: "mov_" + (++state.movementSeq),
+      productId: p.id,
+      type: "receipt",
+      qty: baseDelta,
+      unit: l.unit,
+      unitQty: l.qty,
+      buyingPrice: l.cost,
+      supplier,
+      ref,
+      note: `Received ${l.qty} ${U[l.unit]} from ${supplier}`,
+      user: "Owner",
+      at: new Date()
+    });
+  }
+
+  toast(`Received ${state.receiveDraft.lines.length} line(s) from ${supplier}`);
+  state.receiveDraft = {
+    supplier: state.suppliers[0],
+    invoiceRef: "",
+    lines: [{ productId: 0, unit: "c", qty: 2, cost: 4800 }]
+  };
+  state.stockTab = "overview";
+  render();
+  return true;
+}
+
+function updateStockTakeCount(productId, count) {
+  state.stockTakeDraft.counts[productId] = count === "" ? "" : Math.max(0, +count);
+  render();
+  keep("stk-cnt-" + productId);
+}
+
+function autoFillStockTake() {
+  state.products.forEach(p => {
+    state.stockTakeDraft.counts[p.id] = p.st;
+  });
+  render();
+}
+
+function clearStockTake() {
+  state.stockTakeDraft.counts = {};
+  render();
+}
+
+function setStockTakeMode(mode) {
+  state.stockTakeDraft.mode = mode;
+  render();
+}
+
+function submitStockTake() {
+  const countEntries = Object.entries(state.stockTakeDraft.counts).filter(([id, cnt]) => cnt !== "");
+  if (!countEntries.length) {
+    toast("Enter at least one product count");
+    return false;
+  }
+
+  let adjustedCount = 0;
+  const ref = "STK-TAKE-" + new Date().toLocaleDateString("en-KE").replace(/\//g, "");
+
+  countEntries.forEach(([idStr, counted]) => {
+    const id = +idStr;
+    const p = state.products.find(x => x.id === id);
+    if (!p) return;
+    const diff = (+counted) - p.st;
+    if (Math.abs(diff) > 0.001) {
+      const baseDelta = p.baseUnitsPerBottle > 1 ? Math.round(diff * p.baseUnitsPerBottle) : Math.round(diff);
+      recordStockMovement({
+        id: "mov_" + (++state.movementSeq),
+        productId: p.id,
+        type: "take",
+        qty: baseDelta,
+        unit: "b",
+        unitQty: Math.abs(diff),
+        ref,
+        note: `Stock take adjustment (${diff > 0 ? "+" : ""}${diff} btl)`,
+        user: "Owner",
+        at: new Date()
+      });
+      adjustedCount++;
+    }
+  });
+
+  toast(`Stock take posted · ${adjustedCount} adjustment(s) applied`);
+  state.stockTakeDraft.counts = {};
+  state.stockTakeDraft.mode = "blind";
+  state.stockTab = "overview";
+  render();
+  return true;
+}
+
+function updateAdjustmentDraft(field, val) {
+  state.adjustmentDraft[field] = val;
+  render();
+  keep("adj-note");
+}
+
+function submitAdjustment() {
+  const d = state.adjustmentDraft;
+  const p = state.products.find(x => x.id === d.productId);
+  if (!p) {
+    toast("Select a product");
+    return false;
+  }
+  if (!d.reason) {
+    toast("Reason is mandatory for adjustments");
+    return false;
+  }
+  if (d.qty <= 0) {
+    toast("Quantity must be greater than 0");
+    return false;
+  }
+
+  const isLoss = d.direction === "loss";
+  const baseDelta = toBaseUnits(p, d.unit, d.qty) * (isLoss ? -1 : 1);
+
+  if (baseDelta < 0 && (getProductBaseUnits(p.id) + baseDelta) < 0) {
+    toast("Adjustment blocked: reduction exceeds available stock");
+    return false;
+  }
+
+  const ok = recordStockMovement({
+    id: "mov_" + (++state.movementSeq),
+    productId: p.id,
+    type: "adjustment",
+    qty: baseDelta,
+    unit: d.unit,
+    unitQty: d.qty,
+    reason: d.reason,
+    note: d.note.trim() || `${d.reason.toUpperCase()} adjustment`,
+    ref: "ADJ-" + d.reason.slice(0, 6).toUpperCase(),
+    user: "Owner",
+    at: new Date()
+  });
+
+  if (!ok) {
+    toast("Adjustment blocked: negative stock");
+    return false;
+  }
+
+  toast(`Adjustment posted: ${isLoss ? "−" : "+"}${d.qty} ${U[d.unit]} ${p.n} (${d.reason})`);
+  state.adjustmentDraft.note = "";
+  state.stockTab = "history";
+  render();
+  return true;
+}
+
+// Sub-renderers for Stock Screen Tabs
+function renderStockOverviewTab(lo, totalBaseUnits, totalRetailVal) {
+  const q = state.stockSearch.toLowerCase().trim();
+  const filtered = state.products.filter(p => {
+    const matchesFilter = state.stockFilter === "all" || p.st <= 5;
+    const matchesQuery = !q || (p.n + p.s + p.g).toLowerCase().includes(q);
+    return matchesFilter && matchesQuery;
+  });
+
+  return `
+  <div class="dash">
+    <div class="card"><h4>Total SKUs</h4><div class="big">${state.products.length}</div><small>Active retail items</small></div>
+    <div class="card"><h4>Stock valuation</h4><div class="big">${kes(totalRetailVal)}</div><small>Current retail value</small></div>
+    <div class="card"><h4>Low stock items</h4><div class="big ${lo.length ? "low" : ""}">${lo.length}</div><small>${lo.length ? "Reorder needed" : "All levels healthy"}</small></div>
+    <div class="card"><h4>Total base units</h4><div class="big">${totalBaseUnits.toLocaleString()}</div><small>Derived tots &amp; bottles</small></div>
+
+    <div class="card s2" style="grid-column:1/-1">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
+        <div style="display:flex;gap:.5rem;align-items:center;flex:1;min-width:14rem">
+          <input id="stk-search" placeholder="Search inventory by name, category, or size…" value="${state.stockSearch}" oninput="searchStock(this.value)">
+        </div>
+        <div class="chips" style="margin:0">
+          <button class="${state.stockFilter === "all" ? "on" : ""}" onclick="setStockFilter('all')">All products (${state.products.length})</button>
+          <button class="${state.stockFilter === "low" ? "on" : ""}" onclick="setStockFilter('low')">Low stock only (${lo.length})</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="tab-tbl">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Pack / Tot</th>
+              <th style="text-align:right">Retail (Btl)</th>
+              <th style="text-align:right">Base units</th>
+              <th style="text-align:right">Derived stock</th>
+              <th style="text-align:center">Status</th>
+              <th style="text-align:right">Quick actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(p => `
+              <tr>
+                <td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
+                <td>${p.g}</td>
+                <td>${p.k} btl/ctn${p.tn ? ` · ${p.tn} tots` : ""}</td>
+                <td style="text-align:right"><b>${kes(p.b)}</b></td>
+                <td style="text-align:right">${getProductBaseUnits(p.id)} ${p.tn ? "tots" : "btl"}</td>
+                <td style="text-align:right"><b class="${p.st <= 5 ? "low" : ""}">${fs(p.st)}</b> btl</td>
+                <td style="text-align:center">
+                  <span class="badge ${p.st <= 0 ? "low" : p.st <= 5 ? "b-adj" : "b-rec"}">
+                    ${p.st <= 0 ? "Out of stock" : p.st <= 5 ? "Low stock" : "Healthy"}
+                  </span>
+                </td>
+                <td style="text-align:right">
+                  <div style="display:flex;gap:.35rem;justify-content:flex-end">
+                    <button style="min-height:2.2rem;padding:0 .6rem;font-size:.82rem" onclick="quickReceive(${p.id})">+ Receive</button>
+                    <button class="ghost" style="min-height:2.2rem;padding:0 .6rem;font-size:.82rem" onclick="quickAdjust(${p.id})">Adjust</button>
+                  </div>
+                </td>
+              </tr>
+            `).join("") || `<tr><td colspan="8" class="mu" style="text-align:center;padding:2rem">No inventory items match search filter.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderReceiveTab() {
+  const lines = state.receiveDraft.lines;
+  const totalCost = lines.reduce((sum, l) => sum + (l.cost * l.qty), 0);
+  const totalItemsCount = lines.reduce((sum, l) => sum + l.qty, 0);
+
+  return `
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div>
+          <h4>Receive Goods (Purchase Inward)</h4>
+          <small class="mu">Creates append-only receipt movements that raise derived stock levels</small>
+        </div>
+        <span class="badge b-rec">Goods Inward</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));gap:1rem;margin-bottom:1.25rem">
+        <div>
+          <label class="fl">Distributor / Supplier</label>
+          <select onchange="updateReceiveDraft('supplier', this.value)">
+            ${state.suppliers.map(s => `<option value="${s}" ${state.receiveDraft.supplier === s ? "selected" : ""}>${s}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Delivery Note / Invoice Ref</label>
+          <input id="rec-ref" placeholder="e.g. EABL-INV-9824 or DN-4401" value="${state.receiveDraft.invoiceRef}" oninput="updateReceiveDraft('invoiceRef', this.value)">
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;margin-bottom:1rem">
+        <table class="tab-tbl">
+          <thead>
+            <tr>
+              <th style="min-width:14rem">Product SKU</th>
+              <th style="width:7.5rem">Unit</th>
+              <th style="width:6rem">Qty</th>
+              <th style="width:9rem">Buying price</th>
+              <th style="width:8rem;text-align:right">Subtotal</th>
+              <th style="width:3rem"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lines.map((l, idx) => {
+              const p = state.products.find(x => x.id === l.productId) || state.products[0];
+              return `
+              <tr>
+                <td>
+                  <select onchange="updateReceiveLine(${idx}, 'productId', +this.value)">
+                    ${state.products.map(prod => `<option value="${prod.id}" ${prod.id === l.productId ? "selected" : ""}>${prod.n} (${prod.s} · ${prod.k}pk)</option>`).join("")}
+                  </select>
+                </td>
+                <td>
+                  <select onchange="updateReceiveLine(${idx}, 'unit', this.value)">
+                    <option value="c" ${l.unit === "c" ? "selected" : ""}>Cartons (${p.k} btl)</option>
+                    <option value="b" ${l.unit === "b" ? "selected" : ""}>Bottles (1 btl)</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" min="1" step="1" value="${l.qty}" oninput="updateReceiveLine(${idx}, 'qty', +this.value)">
+                </td>
+                <td>
+                  <input type="number" min="0" step="10" value="${l.cost}" oninput="updateReceiveLine(${idx}, 'cost', +this.value)">
+                </td>
+                <td style="text-align:right;font-weight:700">
+                  ${kes(l.cost * l.qty)}
+                </td>
+                <td style="text-align:center">
+                  <button class="ghost" style="min-height:2.2rem;padding:0 .5rem;color:var(--wn)" onclick="removeReceiveLine(${idx})" ${lines.length <= 1 ? "disabled" : ""}>✕</button>
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+        <button style="min-height:2.4rem;padding:0 1rem" onclick="addReceiveLine()">+ Add another product line</button>
+        <div style="display:flex;gap:1.5rem;align-items:center">
+          <div><small class="mu">Total items:</small> <b>${totalItemsCount}</b></div>
+          <div><small class="mu">Total purchase cost:</small> <b style="font-size:1.25rem">${kes(totalCost)}</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;justify-content:flex-end;gap:.75rem">
+      <button class="ghost" onclick="setStockTab('overview')">Cancel</button>
+      <button class="pri" style="min-width:14rem" onclick="submitReceiveGoods()">Confirm &amp; Receive Goods</button>
+    </div>
+  </div>`;
+}
+
+function renderStockTakeTab() {
+  const isBlind = state.stockTakeDraft.mode === "blind";
+  const counts = state.stockTakeDraft.counts;
+  const countEntries = Object.entries(counts).filter(([id, cnt]) => cnt !== "");
+  let discrepancyCount = 0;
+  let netVarianceValue = 0;
+
+  countEntries.forEach(([idStr, val]) => {
+    const p = state.products.find(x => x.id === +idStr);
+    if (!p) return;
+    const diff = (+val) - p.st;
+    if (Math.abs(diff) > 0.001) {
+      discrepancyCount++;
+      netVarianceValue += diff * (p.b * 0.8);
+    }
+  });
+
+  return `
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
+        <div>
+          <h4>Stock Take (Physical Blind Count &amp; Variance Audit)</h4>
+          <small class="mu">Count physical bottles, review variance against the ledger, and post adjustment movements with owner approval.</small>
+        </div>
+        <div class="chips" style="margin:0">
+          <button class="${isBlind ? "on" : ""}" onclick="setStockTakeMode('blind')">Blind Count Mode</button>
+          <button class="${!isBlind ? "on" : ""}" onclick="setStockTakeMode('review')">Review Variances (${discrepancyCount})</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+        <button style="min-height:2.2rem;padding:0 .8rem;font-size:.82rem" onclick="autoFillStockTake()">Fill with current stock (demo)</button>
+        <button class="ghost" style="min-height:2.2rem;padding:0 .8rem;font-size:.82rem" onclick="clearStockTake()">Clear counts</button>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="tab-tbl">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th style="text-align:right">${isBlind ? "Status" : "System stock"}</th>
+              <th style="width:10rem;text-align:right">Physical count (btl)</th>
+              <th style="text-align:right">Count variance</th>
+              <th style="text-align:right">Financial impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.products.map(p => {
+              const entered = counts[p.id];
+              const hasCount = entered !== undefined && entered !== "";
+              const countNum = hasCount ? +entered : null;
+              const diff = hasCount ? (countNum - p.st) : null;
+              const costEst = Math.round(p.b * 0.8);
+              const valDiff = diff !== null ? Math.round(diff * costEst) : null;
+
+              return `
+              <tr>
+                <td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
+                <td>${p.g}</td>
+                <td style="text-align:right">
+                  ${isBlind ? `<span class="badge ${hasCount ? "b-rec" : "b-open"}">${hasCount ? "Counted" : "Pending"}</span>` : `<b>${fs(p.st)}</b> btl`}
+                </td>
+                <td style="text-align:right">
+                  <input id="stk-cnt-${p.id}" type="number" min="0" step="1" placeholder="Enter btl…" value="${entered ?? ""}" oninput="updateStockTakeCount(${p.id}, this.value)" style="text-align:right;min-height:2.4rem">
+                </td>
+                <td style="text-align:right">
+                  ${diff === null ? `<span class="mu">—</span>` :
+                    diff === 0 ? `<span class="badge b-rec">Matched (0)</span>` :
+                    diff < 0 ? `<span class="badge low">−${Math.abs(diff)} btl (Loss)</span>` :
+                    `<span class="badge b-rec">+${diff} btl (Gain)</span>`}
+                </td>
+                <td style="text-align:right">
+                  ${valDiff === null ? `<span class="mu">—</span>` :
+                    valDiff === 0 ? `<span class="mu">KES 0</span>` :
+                    valDiff < 0 ? `<b class="low">− ${kes(Math.abs(valDiff))}</b>` :
+                    `<b class="ok">+ ${kes(valDiff)}</b>`}
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem">
+      <div style="display:flex;gap:1.5rem;align-items:center">
+        <div><small class="mu">Products counted:</small> <b>${countEntries.length} / ${state.products.length}</b></div>
+        <div><small class="mu">Discrepancies:</small> <b class="${discrepancyCount ? "low" : ""}">${discrepancyCount}</b></div>
+        <div><small class="mu">Net variance:</small> <b class="${netVarianceValue < 0 ? "low" : "ok"}">${netVarianceValue < 0 ? "− " + kes(Math.abs(netVarianceValue)) : "+ " + kes(netVarianceValue)}</b></div>
+      </div>
+      <div style="display:flex;gap:.6rem">
+        <button class="ghost" onclick="setStockTab('overview')">Cancel</button>
+        <button class="pri" style="min-width:14rem" ${!countEntries.length ? "disabled" : ""} onclick="submitStockTake()">Approve &amp; Post Variances</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAdjustmentsTab() {
+  const d = state.adjustmentDraft;
+  const p = state.products.find(x => x.id === d.productId) || state.products[0];
+  const isLoss = d.direction === "loss";
+  const reqBase = toBaseUnits(p, d.unit, d.qty);
+  const availBase = getProductBaseUnits(p.id);
+  const exceeds = isLoss && reqBase > availBase;
+
+  return `
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:44rem">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div>
+          <h4>Manual Stock Adjustment</h4>
+          <small class="mu">Log breakages, theft, expired stock, courtesy gifts, and sampling with mandatory reasons</small>
+        </div>
+        <span class="badge b-adj">Write-Off / Adjustment</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div>
+          <label class="fl">Product SKU</label>
+          <select onchange="updateAdjustmentDraft('productId', +this.value)">
+            ${state.products.map(prod => `<option value="${prod.id}" ${prod.id === d.productId ? "selected" : ""}>${prod.n} (${prod.s} · Current stock: ${fs(prod.st)} btl)</option>`).join("")}
+          </select>
+          <small class="mu" style="margin-top:.25rem;display:block">
+            Current stock: <b>${fs(p.st)}</b> bottles (${availBase} base units in ledger)
+          </small>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <label class="fl">Adjustment Direction</label>
+            <select onchange="updateAdjustmentDraft('direction', this.value)">
+              <option value="loss" ${d.direction === "loss" ? "selected" : ""}>− Reduction (Breakage, Theft, Expired, Gift)</option>
+              <option value="gain" ${d.direction === "gain" ? "selected" : ""}>+ Addition (Found stock / Inventory correction)</option>
+            </select>
+          </div>
+          <div>
+            <label class="fl">Unit</label>
+            <select onchange="updateAdjustmentDraft('unit', this.value)">
+              <option value="b" ${d.unit === "b" ? "selected" : ""}>Bottles</option>
+              <option value="c" ${d.unit === "c" ? "selected" : ""}>Cartons (${p.k} btl)</option>
+              ${p.tn ? `<option value="t" ${d.unit === "t" ? "selected" : ""}>Tots (1/${p.tn} btl)</option>` : ""}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="fl">Quantity to Adjust</label>
+          <input type="number" min="1" step="1" value="${d.qty}" oninput="updateAdjustmentDraft('qty', +this.value)">
+          ${exceeds ? `<small class="low" style="margin-top:.25rem;display:block">Blocked: quantity exceeds available stock (${availBase} base units)</small>` : ""}
+        </div>
+
+        <div>
+          <label class="fl">Reason (Mandatory)</label>
+          <select id="adj-reason" onchange="updateAdjustmentDraft('reason', this.value)">
+            <option value="breakage" ${d.reason === "breakage" ? "selected" : ""}>Breakage / Spillage (Accidental)</option>
+            <option value="theft" ${d.reason === "theft" ? "selected" : ""}>Theft / Unaccounted Shrinkage</option>
+            <option value="expired" ${d.reason === "expired" ? "selected" : ""}>Expired / Damaged Packaging</option>
+            <option value="gift" ${d.reason === "gift" ? "selected" : ""}>Complimentary / Courtesy Gift</option>
+            <option value="sampling" ${d.reason === "sampling" ? "selected" : ""}>Promotional Sampling / Tasting</option>
+            <option value="correction" ${d.reason === "correction" ? "selected" : ""}>Inventory Count Correction</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="fl">Notes / Incident Details</label>
+          <input id="adj-note" placeholder="e.g. Dropped during customer handling in aisle 2" value="${d.note}" oninput="updateAdjustmentDraft('note', this.value)">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;justify-content:flex-end;gap:.75rem">
+      <button class="ghost" onclick="setStockTab('overview')">Cancel</button>
+      <button class="pri" style="min-width:14rem" ${exceeds || d.qty <= 0 || !d.reason ? "disabled" : ""} onclick="submitAdjustment()">Post Adjustment to Ledger</button>
+    </div>
+  </div>`;
+}
+
+function renderHistoryTab() {
+  const q = state.historySearch.toLowerCase().trim();
+  const fType = state.historyTypeFilter;
+
+  const filtered = [...state.stockMovements].reverse().filter(m => {
+    const matchesType = fType === "all" || m.type === fType;
+    if (!matchesType) return false;
+    if (!q) return true;
+    const p = state.products.find(x => x.id === m.productId);
+    const text = `${p ? p.n : ""} ${m.ref || ""} ${m.note || ""} ${m.user || ""} ${m.type} ${m.reason || ""}`.toLowerCase();
+    return text.includes(q);
+  });
+
+  return `
+  <div class="card" style="display:flex;flex-direction:column;gap:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem">
+      <div>
+        <h4>Stock Movements Ledger (Audit Trail)</h4>
+        <small class="mu">Append-only log of every receipt, sale, stock take count, and adjustment</small>
+      </div>
+      <span class="badge b-open">${filtered.length} entries shown</span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem">
+      <div style="flex:1;min-width:14rem">
+        <input id="hist-search" placeholder="Search movements by product, ref, user, or note…" value="${state.historySearch}" oninput="searchHistory(this.value)">
+      </div>
+      <div class="chips" style="margin:0">
+        <button class="${fType === "all" ? "on" : ""}" onclick="setHistoryFilter('all')">All</button>
+        <button class="${fType === "receipt" ? "on" : ""}" onclick="setHistoryFilter('receipt')">Receipts</button>
+        <button class="${fType === "sale" ? "on" : ""}" onclick="setHistoryFilter('sale')">Sales</button>
+        <button class="${fType === "adjustment" ? "on" : ""}" onclick="setHistoryFilter('adjustment')">Adjustments</button>
+        <button class="${fType === "take" ? "on" : ""}" onclick="setHistoryFilter('take')">Stock takes</button>
+        <button class="${fType === "opening" ? "on" : ""}" onclick="setHistoryFilter('opening')">Opening</button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="tab-tbl">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Product</th>
+            <th>Type</th>
+            <th style="text-align:right">Quantity</th>
+            <th style="text-align:right">Base units delta</th>
+            <th>Ref / Note</th>
+            <th>User</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(m => {
+            const p = state.products.find(x => x.id === m.productId);
+            const badgeClass =
+              m.type === "receipt" ? "b-rec" :
+              m.type === "sale" ? "b-sale" :
+              m.type === "adjustment" ? "b-adj" :
+              m.type === "take" ? "b-take" : "b-open";
+
+            const deltaSign = m.qty > 0 ? "+" : "";
+            const isLoss = m.qty < 0;
+
+            return `
+            <tr>
+              <td style="white-space:nowrap;font-size:.82rem;color:var(--mu)">
+                ${new Date(m.at).toLocaleDateString("en-KE", { day: "2-digit", month: "short" })} ${new Date(m.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
+              </td>
+              <td><b>${p ? p.n : "Product #" + m.productId}</b> <small class="mu">${p ? p.s : ""}</small></td>
+              <td><span class="badge ${badgeClass}">${m.type}</span></td>
+              <td style="text-align:right">
+                <b class="${isLoss ? "low" : "ok"}">${deltaSign}${m.unitQty} ${U[m.unit] || m.unit}</b>
+              </td>
+              <td style="text-align:right">
+                <span class="${isLoss ? "low" : "ok"}">${deltaSign}${m.qty} ${p && p.tn ? "tots" : "btl"}</span>
+              </td>
+              <td>
+                <div><b>${m.ref || "—"}</b>${m.reason ? ` <span class="badge b-adj" style="font-size:.7rem;padding:0 .35rem;vertical-align:middle">${m.reason}</span>` : ""}</div>
+                <small class="mu">${m.note || ""}</small>
+              </td>
+              <td><small>${m.user || "System"}</small></td>
+            </tr>`;
+          }).join("") || `<tr><td colspan="7" class="mu" style="text-align:center;padding:2rem">No stock movements found.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
 function stockView() {
   const lo = state.products.filter(p => p.st <= 5);
-  const totBase = state.stockMovements.reduce((a, m) => a + m.qty, 0);
-  const recent = [...state.stockMovements].slice(-8).reverse();
+  const totalBaseUnits = state.products.reduce((sum, p) => sum + getProductBaseUnits(p.id), 0);
+  const totalRetailVal = state.products.reduce((sum, p) => sum + Math.round(p.st * p.b), 0);
 
-  return `<div class="dash">
-<div class="card"><h4>Total SKUs</h4><div class="big">${state.products.length}</div><small>Active retail items</small></div>
-<div class="card"><h4>Stock movements</h4><div class="big">${state.stockMovements.length}</div><small>Append-only ledger entries</small></div>
-<div class="card"><h4>Low stock items</h4><div class="big ${lo.length?"low":""}">${lo.length}</div><small>${lo.length?"Reorder needed":"Levels healthy"}</small></div>
-<div class="card"><h4>Base inventory</h4><div class="big">${totBase.toLocaleString()}</div><small>Derived tots &amp; bottles</small></div>
+  return `
+  <div style="display:flex;flex-direction:column;gap:1rem;height:100%">
+    <!-- Owner Header & Tab Navigation -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span class="badge" style="background:var(--acs);color:var(--act)">Owner Screen</span>
+        <small class="mu">Inventory control · Goods inward · Stock audit · Adjustments</small>
+      </div>
+      <div class="chips" style="margin:0">
+        <button class="${state.stockTab === "overview" ? "on" : ""}" onclick="setStockTab('overview')">Overview</button>
+        <button class="${state.stockTab === "receive" ? "on" : ""}" onclick="setStockTab('receive')">Receive Goods</button>
+        <button class="${state.stockTab === "take" ? "on" : ""}" onclick="setStockTab('take')">Stock Take</button>
+        <button class="${state.stockTab === "adjust" ? "on" : ""}" onclick="setStockTab('adjust')">Adjustments</button>
+        <button class="${state.stockTab === "history" ? "on" : ""}" onclick="setStockTab('history')">History (${state.stockMovements.length})</button>
+      </div>
+    </div>
 
-<div class="card s2" style="grid-column:1/-1">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-<h4>Inventory levels (derived from ledger)</h4>
-<small class="mu">Prompt 1: Receive goods · Stock take · Adjustments</small>
-</div>
-<div style="overflow-x:auto">
-<table class="tab-tbl">
-<thead><tr><th>Product</th><th>Category</th><th>Pack size</th><th style="text-align:right">Base units</th><th style="text-align:right">Derived stock</th><th style="text-align:right">Status</th></tr></thead>
-<tbody>
-${state.products.map(p=>`<tr>
-<td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
-<td>${p.g}</td>
-<td>${p.k} btl${p.tn ? ` · ${p.tn} tots` : ""}</td>
-<td style="text-align:right">${getProductBaseUnits(p.id)} ${p.tn?"tots":"btl"}</td>
-<td style="text-align:right"><b>${fs(p.st)}</b> btl</td>
-<td style="text-align:right"><span class="${p.st<=5?"low ok":"ok"}">${p.st<=5?"Low stock":"Healthy"}</span></td>
-</tr>`).join("")}
-</tbody>
-</table>
-</div>
-</div>
-
-<div class="card s2" style="grid-column:1/-1">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-<h4>Recent stock movements</h4>
-<small class="mu">Append-only audit ledger</small>
-</div>
-<div style="display:flex;flex-direction:column;gap:.25rem">
-${recent.map(m=>{
-  const p = state.products.find(x => x.id === m.productId);
-  return `<div class="row">
-<div><b>${p ? p.n : "Product #" + m.productId}</b> <small class="mu">· ${m.type.toUpperCase()} · ${m.unitQty} ${U[m.unit]||m.unit} (${m.qty > 0 ? "+" : ""}${m.qty} base units)</small></div>
-<div><small class="mu">${m.ref} · ${m.user} · ${new Date(m.at).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}</small></div>
-</div>`;
-}).join("")}
-</div>
-</div>
-</div>`;
+    <!-- Active Tab Pane -->
+    ${
+      state.stockTab === "receive" ? renderReceiveTab() :
+      state.stockTab === "take" ? renderStockTakeTab() :
+      state.stockTab === "adjust" ? renderAdjustmentsTab() :
+      state.stockTab === "history" ? renderHistoryTab() :
+      renderStockOverviewTab(lo, totalBaseUnits, totalRetailVal)
+    }
+  </div>`;
 }
 
 function productsView() {
