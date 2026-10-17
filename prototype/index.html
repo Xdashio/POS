@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cellar POS – Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--rs:8px;--rm:12px;--rl:16px;--bg:#f5f4f2;--card:#fff;--tile:#faf9f8;--bd:#e6e3df;--tx:#19171c;--mu:#6c6872;--ac:#8a1c3c;--act:#8a1c3c;--onac:#fff;--acs:rgba(138,28,60,.07);--gd:#b8893a;--ok:#1d7a4b;--wn:#c0392b;--wns:rgba(192,57,43,.09);--sh:0 1px 2px rgba(25,23,28,.05),0 6px 20px rgba(25,23,28,.05);--ov:rgba(25,23,28,.4);--ph1:#efe9e4;--ph2:#e2d9d1;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0b0f;--card:#14141a;--tile:#1a1a21;--bd:#262630;--tx:#f2f0f4;--mu:#9a96a4;--ac:#b8294f;--act:#f08aa4;--acs:rgba(240,138,164,.1);--gd:#d6b06a;--ok:#4fc58a;--wn:#f07a6a;--wns:rgba(240,122,106,.12);--sh:0 12px 32px rgba(0,0,0,.45);--ov:rgba(0,0,0,.65);--ph1:#23232c;--ph2:#191920;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0b0f;--card:#14141a;--tile:#1a1a21;--bd:#262630;--tx:#f2f0f4;--mu:#9a96a4;--ac:#b8294f;--act:#f08aa4;--acs:rgba(240,138,164,.1);--gd:#d6b06a;--ok:#4fc58a;--wn:#f07a6a;--wns:rgba(240,122,106,.12);--sh:0 12px 32px rgba(0,0,0,.45);--ov:rgba(0,0,0,.65);--ph1:#23232c;--ph2:#191920;color-scheme:dark}
+*{box-sizing:border-box}
+html{font-size:15px}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:1rem/1.5 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;background-image:radial-gradient(60rem 28rem at 90% -12%,var(--acs),transparent)}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:var(--rs);min-height:2.75rem;padding:0 .9rem;transition:.15s}
+button:hover:not(:disabled){border-color:var(--act)}
+button:disabled{opacity:.4;cursor:not-allowed}
+input{font:inherit;font-size:max(16px,1rem);color:inherit;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rs);min-height:2.9rem;padding:0 .9rem;width:100%}
+input:focus,button:focus-visible{outline:2px solid var(--act);outline-offset:1px}
+small,.mu{color:var(--mu)}
+.on{background:var(--acs)!important;border-color:var(--act)!important;color:var(--act)!important}
+.pri{background:var(--ac)!important;color:var(--onac)!important;border-color:var(--ac)!important;font-weight:700;min-height:3.4rem;font-size:1.1rem}
+.ghost{background:transparent}
+
+/* Layout Shell */
+.app-shell{display:flex;flex-direction:column;min-height:100%;height:100%;max-width:2400px;margin:0 auto}
+.app-main{flex:1;display:flex;flex-direction:column;gap:.75rem;padding:.9rem;min-height:0;min-width:0;position:relative}
+.top{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.brand b{font-size:1.15rem}.brand span{display:block;font-size:.8rem;color:var(--mu)}
+.rt{margin-left:auto;display:flex;gap:.5rem}.rt button{min-height:2.5rem}.ok{color:var(--ok)}.wn{color:var(--wn)}
+.bn{font-size:.85rem;color:var(--wn);background:var(--wns);border-radius:var(--rs);padding:.5rem .8rem}
+main{flex:1;min-height:0}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh);padding:1rem;min-width:0}
+.card h4{margin:0;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+
+/* Persistent Navigation (Desktop Side Nav / Mobile Bottom Nav) */
+.side-nav{display:none}
+.bottom-nav{display:none}
+
+@media (min-width:1000px){
+  .app-shell{flex-direction:row;height:100vh;overflow:hidden}
+  .side-nav{display:flex;flex-direction:column;width:13.5rem;flex-shrink:0;background:var(--card);border-right:1px solid var(--bd);padding:1.25rem 1rem;gap:1.25rem;height:100%}
+  .side-brand{padding:0 .25rem}
+  .side-nav nav{display:flex;flex-direction:column;gap:.3rem;flex:1;overflow-y:auto}
+  .nav-btn{display:flex;align-items:center;gap:.75rem;padding:0 .85rem;min-height:2.85rem;border:1px solid transparent;background:transparent;color:var(--tx);border-radius:var(--rm);font-weight:600;font-size:.92rem;text-align:left;width:100%;transition:.15s}
+  .nav-btn:hover:not(:disabled){border-color:var(--act)}
+  .nav-btn.on{background:var(--acs)!important;border-color:var(--act)!important;color:var(--act)!important}
+  .nav-btn svg{width:1.2rem;height:1.2rem;flex-shrink:0}
+  .side-foot{display:flex;flex-direction:column;gap:.5rem;border-top:1px solid var(--bd);padding-top:1rem}
+  .side-user{padding:0 .25rem}
+  .side-user b{display:block;font-size:.88rem}
+  .side-user small{color:var(--mu);font-size:.78rem}
+  .app-main{padding:1.25rem 1.5rem;gap:1.25rem;height:100%;overflow:hidden}
+  .top .mobile-brand{display:none}
+  .top .desktop-title b{font-size:1.15rem}
+  .top .desktop-title span{display:block;font-size:.8rem;color:var(--mu)}
+}
+
+@media (max-width:999px){
+  .side-nav{display:none}
+  .app-shell{padding-bottom:calc(4.6rem + env(safe-area-inset-bottom,0px));height:auto;min-height:100%}
+  .app-main{padding:.75rem .75rem 1rem}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:12;display:grid;grid-template-columns:repeat(7,1fr);background:var(--card);border-top:1px solid var(--bd);padding:.3rem .15rem calc(.3rem + env(safe-area-inset-bottom,0px));box-shadow:0 -2px 10px rgba(25,23,28,.05)}
+  .b-nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:2.75rem;padding:.2rem 0;border:0;background:transparent;color:var(--mu);border-radius:var(--rs);transition:.15s}
+  .b-nav-btn:hover{color:var(--tx)}
+  .b-nav-btn.on{color:var(--act)!important;background:var(--acs)!important}
+  .b-nav-btn svg{width:1.15rem;height:1.15rem;flex-shrink:0}
+  .b-nav-btn span{font-size:.62rem;font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .cbar{bottom:calc(4.4rem + env(safe-area-inset-bottom,0px));z-index:13}
+  .toast{bottom:calc(4.8rem + env(safe-area-inset-bottom,0px))}
+  .top .desktop-title{display:none}
+}
+
+/* Sell Screen Layout */
+.sell{display:grid;grid-template-columns:minmax(0,1fr) 24rem;grid-template-rows:auto minmax(0,1fr);gap:.75rem;height:100%}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.t{display:flex;flex-direction:column;justify-content:space-between;gap:.4rem}
+.big{font-size:1.55rem;font-weight:700;line-height:1.2}
+.sw{position:relative;width:3.2rem;height:1.9rem;min-height:1.9rem;border-radius:99px;padding:0}
+.sw i{position:absolute;top:.2rem;left:.2rem;width:1.4rem;height:1.4rem;border-radius:50%;background:var(--mu);transition:.2s}
+.sw.on{background:var(--ac)!important;border-color:var(--ac)!important}.sw.on i{left:1.5rem;background:#fff}
+.prod{display:flex;flex-direction:column;gap:.75rem;min-height:0}
+.chips{display:flex;gap:.4rem;overflow-x:auto}.chips button{flex:none;min-height:2.3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.6rem;overflow:auto;padding:2px;align-content:start}
+.pt{display:flex;flex-direction:column;align-items:stretch;gap:.2rem;text-align:left;padding:.55rem;border-radius:var(--rm);background:var(--tile);min-height:0}
+.pt:hover:not(:disabled){border-color:var(--gd);transform:translateY(-2px)}.pt:active{transform:scale(.98)}
+.pt b{font-size:.92rem;line-height:1.2;margin-top:.35rem}.pt .pr{font-weight:700}
+.ph{display:grid;place-items:center;color:var(--mu);background:linear-gradient(145deg,var(--ph1),var(--ph2));border-radius:var(--rs);aspect-ratio:4/3;width:100%}
+.ph svg{width:36%;height:auto;opacity:.8}
+.ph.th{width:2.9rem;aspect-ratio:1;grid-row:span 2;align-self:center}.ph.th svg{width:62%}
+.low{color:var(--wn);font-size:.8rem}
+.cart{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;gap:.75rem;min-height:0}
+.chead{display:flex;justify-content:space-between;align-items:center}.cclose{display:none;min-height:2.3rem}
+.lines{flex:1;overflow:auto;display:flex;flex-direction:column;gap:.5rem}
+.ln{display:grid;grid-template-columns:auto 1fr auto;gap:.4rem .7rem;padding:.6rem;border:1px solid var(--bd);border-radius:var(--rm);background:var(--tile);align-items:center}
+.ln .lp{font-weight:700;text-align:right}
+.seg{display:flex;gap:.2rem;padding:.2rem;background:var(--bg);border-radius:var(--rm);justify-self:start}
+.seg button{min-height:2.2rem;border:0;background:transparent;padding:0 .75rem}
+.qty{display:flex;align-items:center;gap:.4rem;justify-self:end}.qty button{width:2.3rem;min-height:2.3rem;padding:0}
+.tot{border-top:1px dashed var(--bd);padding-top:.7rem;display:flex;flex-direction:column;gap:.25rem}.tot div{display:flex;justify-content:space-between}
+.empty{margin:auto;text-align:center;color:var(--mu)}
+
+/* Dashboard & Reports Layout */
+.dash{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;overflow:auto;height:100%;align-content:start}.s2{grid-column:span 2}
+.row{display:flex;justify-content:space-between;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--bd)}.row:last-child{border:0}
+.bar{height:.5rem;border-radius:var(--rs);background:var(--acs);margin-top:.25rem}.bar i{display:block;height:100%;border-radius:var(--rs);background:var(--ac)}
+
+/* Modals & Overlays */
+.ov{position:fixed;inset:0;background:var(--ov);display:grid;place-items:center;padding:1rem;z-index:20}
+.mod{width:min(28rem,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:.75rem}.mod h3{margin:0;font-size:1.4rem}
+.ft{display:flex;gap:.5rem}.ft button{flex:1}
+.rc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;display:flex;flex-direction:column;gap:.2rem}.rc .row{border:0;padding:1px 0}.rc hr{border:0;border-top:1px dashed var(--mu);width:100%;margin:.4rem 0}
+.qr{width:4.5rem;height:4.5rem;border:2px dashed var(--mu);border-radius:var(--rs);display:grid;place-items:center;font-size:.65rem;color:var(--mu);margin:.4rem auto}
+.toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);background:var(--ac);color:var(--onac);padding:.6rem 1.1rem;border-radius:var(--rs);z-index:30;font-weight:600}
+.cbar{display:none;position:fixed;left:.75rem;right:.75rem;bottom:calc(.75rem + env(safe-area-inset-bottom,0px));z-index:10;justify-content:space-between;align-items:center;background:var(--ac)!important;color:var(--onac)!important;border-color:var(--ac)!important;min-height:3.4rem;font-weight:600;box-shadow:var(--sh)}
+
+@media (max-width:999px){
+  .sell{display:flex;flex-direction:column;height:auto}.grid{overflow:visible}.dash{grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}
+  .cart{position:fixed;inset:0;z-index:15;border-radius:0;border:0;transform:translateY(100%);visibility:hidden;transition:.25s;padding-top:calc(1rem + env(safe-area-inset-top,0px));padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))}
+  .cart.open{transform:none;visibility:visible}.cclose{display:block}.cbar{display:flex}
+}
+@media (max-width:640px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles>:first-child{grid-column:1/-1}.dash{grid-template-columns:1fr}.s2{grid-column:auto}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ov{place-items:end center;padding:0}.mod{width:100%;border-radius:var(--rl) var(--rl) 0 0}.big{font-size:1.4rem}
+}
+@media (min-width:1600px){html{font-size:16.5px}.sell{grid-template-columns:minmax(0,1fr) 28rem}}
+@media (min-width:2200px){html{font-size:20px}}
+
+*{scrollbar-width:thin;scrollbar-color:var(--bd) transparent}
+@supports (color:color-mix(in srgb,red,blue)){*{scrollbar-color:color-mix(in srgb,var(--mu) 45%,transparent) transparent}}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}::-webkit-scrollbar-button{display:none}
+::-webkit-scrollbar-thumb{background:var(--bd);border:3px solid transparent;background-clip:content-box;border-radius:var(--rs)}
+::-webkit-scrollbar-thumb:hover{background:var(--mu);background-clip:content-box}
+
+.tiles,.sell{gap:1rem}.top{gap:1rem}.cart{gap:1rem}.prod{gap:1rem}.dash{gap:1rem}
+.t{gap:.6rem}.lines{gap:.6rem;padding-right:.3rem}.tot{padding-top:.9rem;gap:.35rem}.row{padding:.6rem 0}
+.chips{gap:.5rem;padding:.2rem}.chips button{padding:0 1rem;min-height:2.4rem}
+.grid{gap:.75rem;padding:.2rem .6rem .2rem .2rem;grid-auto-rows:max-content}
+.pt{padding:.7rem;gap:.15rem;min-height:auto}.pt b{margin-top:.5rem;font-size:.95rem}.pt .pr{margin-top:.25rem}
+.ln{padding:.75rem;gap:.55rem .8rem}
+@media (min-width:641px){.card{padding:1.25rem}}
+.mod{padding:0;gap:0;overflow:hidden;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh);width:min(28rem,100%)}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;padding:1.25rem 1.25rem 1rem}.mh h3{margin:.1rem 0 0;font-size:2rem;line-height:1.1}.x{width:2.5rem;min-height:2.5rem;padding:0}
+.mt{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:0 1.25rem}.mt button{display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;border-radius:var(--rm)}
+.mb{padding:1.25rem;display:flex;flex-direction:column;gap:1rem;overflow:auto}.mod .ft{padding:1rem 1.25rem;border-top:1px solid var(--bd)}
+.i{width:1.2rem;height:1.2rem;flex:none}
+.fl{display:block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin-bottom:.45rem}
+.inp{display:flex;align-items:center;gap:.6rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm);padding:0 1rem}.inp span{color:var(--mu);font-weight:600}
+.inp input{border:0;outline:0;background:transparent;font-size:1.4rem;font-weight:700;min-height:3.5rem;padding:0}.inp:focus-within{border-color:var(--act);box-shadow:0 0 0 3px var(--acs)}
+.qk{display:grid;grid-template-columns:repeat(auto-fit,minmax(5rem,1fr));gap:.5rem}
+.sum{display:flex;justify-content:space-between;align-items:center;padding:1rem;border-radius:var(--rm)}.sum b{font-size:1.5rem}
+.sum.good{background:rgba(31,122,77,.12);color:var(--ok)}.sum.bad{background:var(--wns);color:var(--wn)}
+.stk{min-height:3.2rem;border-radius:var(--rm)}
+.rw{width:min(23rem,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:1rem;padding:.25rem}
+.rok{display:flex;align-items:center;gap:.8rem;background:var(--card);border:1px solid var(--bd);border-radius:var(--rm);padding:.8rem 1rem}
+.rok .i{width:2.4rem;height:2.4rem;padding:.55rem;border-radius:50%;background:var(--ok);color:#fff}.rok small{display:block}
+.paper{position:relative;background:#fbfaf7;color:#1d1b20;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;padding:1.4rem 1.25rem 1.5rem;border-radius:var(--rs) var(--rs) 0 0;display:flex;flex-direction:column;gap:.55rem;margin-bottom:10px}
+.paper::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px;background:linear-gradient(135deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px,linear-gradient(225deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px}
+.paper .c{text-align:center}.paper hr{border:0;border-top:1px dashed #b9b4aa;margin:.2rem 0;width:100%}.paper .r{display:flex;justify-content:space-between;gap:.6rem}
+.paper .m{color:#6c6872;font-size:.75rem}.paper .tt{font-size:1.2rem;font-weight:700}.paper .qr{border-color:#b9b4aa;color:#6c6872}
+@media (max-width:640px){.mod{width:100%;border-radius:var(--rl) var(--rl) 0 0}.rw{padding:1rem}}
+h3,.big,.brand b,.pt b{letter-spacing:-.02em}
+button{font-weight:600}.card h4,.fl{font-weight:700;letter-spacing:.09em}
+@media (min-width:1000px){.sell,.tiles,.cart,.prod{gap:1.25rem}.card{padding:1.5rem}.dash{gap:1.25rem}}
+@media (min-width:641px){.card{padding:1.5rem}}
+.tiles .card{padding:1.1rem 1.25rem;gap:.75rem}
+.chips{display:flex;flex-wrap:wrap;overflow:visible;padding:0;margin:0;gap:.45rem}.chips button{flex:0 0 auto;min-height:2.2rem;padding:0 .85rem;font-size:.86rem}.chips button:focus-visible{outline-offset:-2px}
+@media (max-width:640px){.chips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.chips button{padding:0 .25rem;min-height:2.3rem;font-size:.8rem}}
+.grid{gap:1rem;padding:.3rem .8rem .5rem .3rem}
+.pt{padding:.85rem;gap:.35rem}.pt b{margin-top:.6rem;line-height:1.3}.pt small{line-height:1.3}.pt .pr{margin-top:.4rem;font-size:1.02rem}
+.ln{padding:1rem;gap:.7rem 1rem}.lines{gap:.75rem}.tot{padding-top:1.1rem;gap:.5rem}.row{padding:.75rem 0}
+.mh{padding:1.5rem 1.5rem 1.1rem}.mt{padding:0 1.5rem}.mb{padding:1.5rem;gap:1.25rem}.mod .ft{padding:1.1rem 1.5rem}
+.rok{padding:1rem 1.1rem}.paper{padding:1.75rem 1.5rem;gap:.7rem}.bn{padding:.65rem 1rem;line-height:1.45}
+.seg button{padding:0 .9rem}
+.tab-tbl{width:100%;border-collapse:collapse;text-align:left;font-size:.9rem}
+.tab-tbl th{padding:.55rem .4rem;color:var(--mu);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bd)}
+.tab-tbl td{padding:.6rem .4rem;border-bottom:1px solid var(--bd)}
+.tab-tbl tr:last-child td{border-bottom:0}
+</style></head>
+<body><div id="app"></div><div id="tt"></div>
+<script>
+// Raw catalog definition: [name, size, category, bottlePrice, packSize, totsPerBottle, totPrice, initialBottles]
+const RAW_CATALOG = [
+  ["Tusker Lager","500ml","Beer",250,24,0,0,120],
+  ["Guinness","500ml","Beer",300,24,0,0,80],
+  ["Heineken","330ml","Beer",280,24,0,0,60],
+  ["Johnnie Walker Black","750ml","Whisky",4800,6,25,350,8],
+  ["Jameson","750ml","Whisky",3600,12,25,260,14],
+  ["Jack Daniel’s","750ml","Whisky",4200,12,25,300,3],
+  ["Black & White","750ml","Whisky",1500,12,25,110,18],
+  ["Chrome Vodka","750ml","Vodka",1100,12,25,90,22],
+  ["Smirnoff Red","750ml","Vodka",1500,12,25,120,16],
+  ["Gilbey’s Gin","750ml","Gin",1600,12,25,130,11],
+  ["Kenya Cane","750ml","Spirits",1100,12,25,90,30],
+  ["Captain Morgan","750ml","Rum",1900,12,25,150,9],
+  ["Hennessy VS","750ml","Cognac",7500,6,25,550,4],
+  ["Amarula","750ml","Liqueur",2300,12,25,180,12],
+  ["Four Cousins Sweet Red","750ml","Wine",1300,6,0,0,26],
+  ["Nederburg Cabernet","750ml","Wine",1800,6,0,0,2],
+  ["Robertson Chardonnay","750ml","Wine",1700,6,0,0,10]
+];
+
+// Helper: convert quantity in unit to base units (tot if product has tots; bottle otherwise)
+function toBaseUnits(p, u, qty) {
+  if (p.tn > 0) {
+    if (u === "t") return qty;
+    if (u === "b") return qty * p.tn;
+    if (u === "c") return qty * p.k * p.tn;
+  } else {
+    if (u === "b") return qty;
+    if (u === "c") return qty * p.k;
+  }
+  return qty;
+}
+
+// Initial opening stock movements for the append-only ledger
+const initialMovements = RAW_CATALOG.map((a, i) => {
+  const tn = a[5];
+  const btlStock = a[7];
+  const baseQty = tn > 0 ? btlStock * tn : btlStock;
+  return {
+    id: `mov_init_${i + 1}`,
+    productId: i,
+    type: "opening",
+    qty: baseQty,
+    unit: "b",
+    unitQty: btlStock,
+    ref: "OPEN-STOCK",
+    note: "Initial opening stock",
+    user: "System",
+    at: new Date(Date.now() - 3600 * 1000 * 8)
+  };
+});
+
+// Central Application State
+const state = {
+  view: "sell", // active screen: "sell" | "stock" | "products" | "till" | "reports" | "users" | "settings"
+  cartOpen: false,
+  selectedCategory: "All",
+  searchQuery: "",
+  ageVerified: false,
+  offline: false,
+  syncCount: 0,
+  
+  // Checkout & active modals
+  payment: null,
+  receipt: null,
+  invoiceSeq: 124,
+  movementSeq: initialMovements.length,
+  
+  // Till / Shift session
+  till: {
+    status: "open",
+    float: 5000,
+    cashier: "Cashier 1",
+    tillNumber: 1
+  },
+  
+  // Baseline historical metrics
+  baseMetrics: {
+    totalSales: 48250,
+    transactionCount: 23,
+    cashSales: 21400,
+    mpesaSales: 26850,
+    topSellersSeed: {
+      "Tusker Lager": 64,
+      "Chrome Vodka": 18,
+      "Kenya Cane": 15,
+      "Johnnie Walker Black": 5
+    }
+  },
+  
+  // Product catalog with dynamically derived stock
+  products: RAW_CATALOG.map((a, i) => {
+    const prod = {
+      id: i,
+      n: a[0],
+      s: a[1],
+      g: ["Beer","Whisky","Wine"].includes(a[2]) ? a[2] : "Spirits",
+      b: a[3],
+      k: a[4],
+      tn: a[5],
+      t: a[6],
+      cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
+    };
+    Object.defineProperty(prod, "st", {
+      get() { return getProductStock(this.id); },
+      enumerable: true
+    });
+    return prod;
+  }),
+  
+  // Active cart
+  cart: [],
+  
+  // Completed sales
+  sales: [],
+  
+  // Append-only stock movements ledger (Single Source of Truth for stock)
+  stockMovements: initialMovements
+};
+
+// Derived Stock Calculations
+function getProductStock(productId) {
+  const p = state.products.find(x => x.id === productId);
+  if (!p) return 0;
+  const totUnits = state.stockMovements
+    .filter(m => m.productId === productId)
+    .reduce((sum, m) => sum + m.qty, 0);
+  return p.tn > 0 ? totUnits / p.tn : totUnits;
+}
+
+function getProductBaseUnits(productId) {
+  return state.stockMovements
+    .filter(m => m.productId === productId)
+    .reduce((sum, m) => sum + m.qty, 0);
+}
+
+// Backwards compatibility aliases
+const P = state.products;
+const S = state;
+const base = {
+  get tot() { return state.baseMetrics.totalSales; },
+  get n() { return state.baseMetrics.transactionCount; },
+  get cash() { return state.baseMetrics.cashSales; },
+  get mp() { return state.baseMetrics.mpesaSales; }
+};
+const seed = state.baseMetrics.topSellersSeed;
+
+// Helpers & Formatters
+const U = { b: "Btl", c: "Ctn", t: "Tot" };
+const $ = id => document.getElementById(id);
+const price = (p, u) => u == "b" ? p.b : u == "c" ? p.cp : p.t;
+const fac = (p, u) => u == "b" ? 1 : u == "c" ? p.k : (p.tn ? 1 / p.tn : 1);
+const kes = n => "KES " + Math.round(n).toLocaleString("en-KE");
+const fs = n => Number.isInteger(n) ? n : n.toFixed(1);
+const total = () => state.cart.reduce((a, l) => {
+  const p = state.products.find(x => x.id === l.id);
+  return a + (p ? price(p, l.u) * l.q : 0);
+}, 0);
+const units = p => p.tn ? ["b", "c", "t"] : ["b", "c"];
+
+// SVG Icons
+const ICO = {
+  Beer: '<path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 8h10M7 16h10"/>',
+  Wine: '<path d="M10 2h4v4c0 1.5 1.5 2.5 1.5 5v10a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V11c0-2.5 1.5-3.5 1.5-5z"/><path d="M8.5 14h7"/>',
+  Whisky: '<path d="M10 2h4v3l2.2 2.4c.5.5.8 1.2.8 2V21a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9.4c0-.8.3-1.5.8-2L10 5z"/><path d="M7 13h10"/>'
+};
+ICO.Spirits = ICO.Whisky;
+const ico = g => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${ICO[g]||ICO.Whisky}</svg>`;
+
+const sv = p => '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+const IC = {
+  cash: sv('<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>'),
+  phone: sv('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>'),
+  ok: sv('<path d="M5 12l5 5 9-10"/>')
+};
+
+const NAV_ICONS = {
+  sell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
+  stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3l2 2v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2V3z"/><path d="M7 13h10"/></svg>',
+  till: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="1"/></svg>',
+  reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+};
+
+// Router Configuration
+const SCREENS = {
+  sell: { id: "sell", label: "Sell", title: "Point of Sale", subtitle: "Till 1 · Active sale" },
+  stock: { id: "stock", label: "Stock", title: "Stock Management", subtitle: "Ledger-derived inventory" },
+  products: { id: "products", label: "Products", title: "Products & Pricing", subtitle: "Catalog & pack configurations" },
+  till: { id: "till", label: "Till", title: "Till & Shifts", subtitle: "Cash & shift reconciliation" },
+  reports: { id: "reports", label: "Reports", title: "Reports & Dashboard", subtitle: "Sales, velocity & shrinkage" },
+  users: { id: "users", label: "Users", title: "Users & Security", subtitle: "Roles, PINs & audit log" },
+  settings: { id: "settings", label: "Settings", title: "Settings & Profile", subtitle: "Shop config & hardware" }
+};
+
+function navigateTo(v) {
+  if (v === "dash") v = "reports";
+  if (SCREENS[v]) {
+    state.view = v;
+    render();
+  }
+}
+const go = navigateTo;
+
+// Core Actions
+function tOff() {
+  state.offline = !state.offline;
+  if (!state.offline) {
+    toast("Back online · " + state.syncCount + " sale(s) synced");
+    state.syncCount = 0;
+  }
+  render();
+}
+
+function tTheme() {
+  const d = document.documentElement;
+  const cur = d.dataset.theme || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+  d.dataset.theme = cur == "dark" ? "light" : "dark";
+}
+
+function toast(m) {
+  $("tt").innerHTML = `<div class="toast">${m}</div>`;
+  setTimeout(() => $("tt").innerHTML = "", 2200);
+}
+
+function add(id) {
+  const l = state.cart.find(x => x.id == id && x.u == "b");
+  l ? l.q++ : state.cart.push({ id, u: "b", q: 1 });
+  render();
+}
+
+function qty(i, d) {
+  state.cart[i].q += d;
+  if (state.cart[i].q < 1) state.cart.splice(i, 1);
+  render();
+}
+
+function unit(i, u) {
+  state.cart[i].u = u;
+  const l = state.cart[i];
+  const j = state.cart.findIndex((x, k) => k != i && x.id == l.id && x.u == u);
+  if (j > -1) {
+    state.cart[j].q += l.q;
+    state.cart.splice(i, 1);
+  }
+  render();
+}
+
+function keep(id) {
+  if (!id) return;
+  const e = $(id);
+  if (e) {
+    e.focus();
+    e.setSelectionRange(e.value.length, e.value.length);
+  }
+}
+
+function search(v) {
+  state.searchQuery = v;
+  render();
+  keep("q");
+}
+
+function scan(e) {
+  if (e.key != "Enter") return;
+  const f = list();
+  if (f.length) {
+    add(f[0].id);
+    state.searchQuery = "";
+    render();
+    keep("q");
+  }
+}
+
+function upd(k, v, id) {
+  state.payment[k] = v;
+  render();
+  keep(id);
+}
+
+function list() {
+  const q = state.searchQuery.toLowerCase();
+  return state.products.filter(p => (state.selectedCategory == "All" || p.g == state.selectedCategory) && (p.n + p.s).toLowerCase().includes(q));
+}
+
+function charge() {
+  state.payment = { m: "cash", tend: total(), phone: "0712 345 678", ref: "", st: "idle" };
+  render();
+}
+
+function stk() {
+  state.payment.st = "wait";
+  render();
+  setTimeout(() => {
+    if (state.payment) {
+      state.payment.st = "ok";
+      state.payment.ref = "S" + Math.random().toString(36).slice(2, 11).toUpperCase();
+      render();
+    }
+  }, 2000);
+}
+
+function finish() {
+  const t = total();
+  const d = state.payment;
+  const s = {
+    no: "INV-" + String(++state.invoiceSeq).padStart(6, "0"),
+    lines: state.cart.map(l => {
+      const p = state.products.find(x => x.id === l.id);
+      return { n: p.n, s: p.s, u: l.u, q: l.q, pr: price(p, l.u) };
+    }),
+    t,
+    m: d.m,
+    ref: d.ref,
+    tend: d.tend,
+    pend: d.m == "mpesa" && state.offline,
+    at: new Date()
+  };
+
+  // Append-only stock movements ledger derivation
+  state.cart.forEach(l => {
+    const p = state.products.find(x => x.id === l.id);
+    const baseDelta = toBaseUnits(p, l.u, l.q);
+    state.stockMovements.push({
+      id: "mov_" + (++state.movementSeq),
+      productId: p.id,
+      type: "sale",
+      qty: -baseDelta,
+      unit: l.u,
+      unitQty: l.q,
+      ref: s.no,
+      note: `Sale ${s.no} (${l.q} ${U[l.u]})`,
+      user: state.till.cashier,
+      at: new Date()
+    });
+  });
+
+  if (state.offline) state.syncCount++;
+  state.sales.push(s);
+  state.receipt = s;
+  state.payment = null;
+  state.cart = [];
+  state.ageVerified = false;
+  render();
+}
+
+// Screen Renderers
+function sell() {
+  const f = list();
+  const t = total();
+  const open = state.cartOpen && state.cart.length;
+  const n = state.cart.reduce((a, l) => a + l.q, 0);
+  const sum = state.sales.reduce((a, s) => a + s.t, 0);
+
+  return `<div class="sell"><div class="tiles">
+<div class="card t"><h4>Age verified (18+)</h4><div style="display:flex;align-items:center;justify-content:space-between"><span class="${state.ageVerified?"":"low"}">${state.ageVerified?"ID checked":"Required to charge"}</span><button class="sw ${state.ageVerified?"on":""}" aria-label="Age verified" onclick="state.ageVerified=!state.ageVerified;render()"><i></i></button></div></div>
+<div class="card t"><h4>Till</h4><div class="big">Open</div><small>Float ${kes(state.till.float)} · ${state.till.cashier}</small></div>
+<div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.length} transactions</small></div></div>
+<section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
+<div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
+<div class="grid">${f.map(p=>`<button class="pt" onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${p.st<=5?"low":""}">${p.st<=5?"Low · ":""}${fs(p.st)} in stock</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
+<aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
+<div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div><div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
+<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified?"":"disabled"} onclick="charge()">${state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
+}
+
+function dash() {
+  const sum = state.sales.reduce((a, s) => a + s.t, 0);
+  const cash = base.cash + state.sales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
+  const mp = base.mp + state.sales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
+  const pend = state.sales.filter(s => s.pend).length;
+  const top = { ...seed };
+  state.sales.forEach(s => s.lines.forEach(l => top[l.n] = (top[l.n] || 0) + l.q));
+  const tp = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const mx = tp[0][1];
+  const lo = state.products.filter(p => p.st <= 5);
+
+  return `<div class="dash">
+<div class="card s2"><h4>Sales today</h4><div class="big" style="font-size:34px">${kes(base.tot+sum)}</div><small>Cash ${kes(cash)} · M-Pesa ${kes(mp)}</small></div>
+<div class="card"><h4>Transactions</h4><div class="big">${base.n+state.sales.length}</div><small>Avg ${kes((base.tot+sum)/(base.n+state.sales.length))}</small></div>
+<div class="card"><h4>M-Pesa to reconcile</h4><div class="big ${pend?"low":""}">${pend}</div><small>Entered manually while offline</small></div>
+<div class="card s2"><h4>Top sellers</h4>${tp.map(([n,q])=>`<div style="margin-top:8px"><div class="row" style="border:0;padding:0"><span>${n}</span><b>${q}</b></div><div class="bar"><i style="width:${q/mx*100}%"></i></div></div>`).join("")}</div>
+<div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small></span><span><b class="low">${fs(p.st)} left</b> · order ${p.k}</b></span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
+<div class="card s2"><h4>Till reconciliation · yesterday</h4><div class="row"><span>Expected cash</span><b>${kes(18900)}</b></div><div class="row"><span>Counted cash</span><b>${kes(18750)}</b></div><div class="row"><span>Variance</span><b class="low">− ${kes(150)}</b></div></div>
+<div class="card s2"><h4>Voids &amp; discounts</h4><div class="row"><span>Void · Tusker ×2 · Cashier 1</span><small>14:05</small></div><div class="row"><span>10% off · JW Black · owner approved</span><small>12:40</small></div><div class="row"><span>Price override · Chrome Vodka</span><small>09:15</small></div></div></div>`;
+}
+
+function stockView() {
+  const lo = state.products.filter(p => p.st <= 5);
+  const totBase = state.stockMovements.reduce((a, m) => a + m.qty, 0);
+  const recent = [...state.stockMovements].slice(-8).reverse();
+
+  return `<div class="dash">
+<div class="card"><h4>Total SKUs</h4><div class="big">${state.products.length}</div><small>Active retail items</small></div>
+<div class="card"><h4>Stock movements</h4><div class="big">${state.stockMovements.length}</div><small>Append-only ledger entries</small></div>
+<div class="card"><h4>Low stock items</h4><div class="big ${lo.length?"low":""}">${lo.length}</div><small>${lo.length?"Reorder needed":"Levels healthy"}</small></div>
+<div class="card"><h4>Base inventory</h4><div class="big">${totBase.toLocaleString()}</div><small>Derived tots &amp; bottles</small></div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Inventory levels (derived from ledger)</h4>
+<small class="mu">Prompt 1: Receive goods · Stock take · Adjustments</small>
+</div>
+<div style="overflow-x:auto">
+<table class="tab-tbl">
+<thead><tr><th>Product</th><th>Category</th><th>Pack size</th><th style="text-align:right">Base units</th><th style="text-align:right">Derived stock</th><th style="text-align:right">Status</th></tr></thead>
+<tbody>
+${state.products.map(p=>`<tr>
+<td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
+<td>${p.g}</td>
+<td>${p.k} btl${p.tn ? ` · ${p.tn} tots` : ""}</td>
+<td style="text-align:right">${getProductBaseUnits(p.id)} ${p.tn?"tots":"btl"}</td>
+<td style="text-align:right"><b>${fs(p.st)}</b> btl</td>
+<td style="text-align:right"><span class="${p.st<=5?"low ok":"ok"}">${p.st<=5?"Low stock":"Healthy"}</span></td>
+</tr>`).join("")}
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Recent stock movements</h4>
+<small class="mu">Append-only audit ledger</small>
+</div>
+<div style="display:flex;flex-direction:column;gap:.25rem">
+${recent.map(m=>{
+  const p = state.products.find(x => x.id === m.productId);
+  return `<div class="row">
+<div><b>${p ? p.n : "Product #" + m.productId}</b> <small class="mu">· ${m.type.toUpperCase()} · ${m.unitQty} ${U[m.unit]||m.unit} (${m.qty > 0 ? "+" : ""}${m.qty} base units)</small></div>
+<div><small class="mu">${m.ref} · ${m.user} · ${new Date(m.at).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}</small></div>
+</div>`;
+}).join("")}
+</div>
+</div>
+</div>`;
+}
+
+function productsView() {
+  const minP = Math.min(...state.products.map(p => p.b));
+  const maxP = Math.max(...state.products.map(p => p.b));
+
+  return `<div class="dash">
+<div class="card"><h4>Total catalog</h4><div class="big">${state.products.length} SKUs</div><small>Across 4 categories</small></div>
+<div class="card"><h4>Price range</h4><div class="big">${kes(minP)} – ${kes(maxP)}</div><small>Bottle retail price</small></div>
+<div class="card s2"><h4>Carton discount</h4><div class="big">3% off pack</div><small>Prompt 2: Edit drawer · Excel import · Price change log</small></div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Product list &amp; pricing</h4>
+<small class="mu">All prices include VAT 16%</small>
+</div>
+<div style="overflow-x:auto">
+<table class="tab-tbl">
+<thead><tr><th>Product</th><th>Category</th><th style="text-align:right">Bottle</th><th style="text-align:right">Carton</th><th style="text-align:right">Tot</th><th style="text-align:right">Stock</th></tr></thead>
+<tbody>
+${state.products.map(p=>`<tr>
+<td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
+<td>${p.g}</td>
+<td style="text-align:right"><b>${kes(p.b)}</b></td>
+<td style="text-align:right">${kes(p.cp)} <small class="mu">(${p.k}pk)</small></td>
+<td style="text-align:right">${p.t ? kes(p.t) : "—"}</td>
+<td style="text-align:right"><b class="${p.st<=5?"low":""}">${fs(p.st)}</b></td>
+</tr>`).join("")}
+</tbody>
+</table>
+</div>
+</div>
+</div>`;
+}
+
+function tillView() {
+  const sum = state.sales.reduce((a, s) => a + s.t, 0);
+  const cash = base.cash + state.sales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
+  const mp = base.mp + state.sales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
+
+  return `<div class="dash">
+<div class="card"><h4>Till status</h4><div class="big ok">Open</div><small>Till #1 · ${state.till.cashier}</small></div>
+<div class="card"><h4>Float balance</h4><div class="big">${kes(state.till.float)}</div><small>Opening float</small></div>
+<div class="card"><h4>Cash collected</h4><div class="big">${kes(cash)}</div><small>In cash drawer</small></div>
+<div class="card"><h4>M-Pesa collected</h4><div class="big">${kes(mp)}</div><small>Daraja till</small></div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Shift details &amp; drawer controls</h4>
+<small class="mu">Prompt 3: Open/close till flows · Denomination count</small>
+</div>
+<div class="row"><span>Active cashier</span><b>${state.till.cashier}</b></div>
+<div class="row"><span>Till station</span><b>Till 1 (Single outlet)</b></div>
+<div class="row"><span>Expected cash in drawer</span><b>${kes(state.till.float + cash)}</b></div>
+<div class="row"><span>Total transactions today</span><b>${base.n + state.sales.length}</b></div>
+<div class="row"><span>Shift status</span><b class="ok">Active shift · Normal operation</b></div>
+</div>
+</div>`;
+}
+
+function usersView() {
+  return `<div class="dash">
+<div class="card"><h4>Active session</h4><div class="big">${state.till.cashier}</div><small>Role: Cashier · Till 1</small></div>
+<div class="card"><h4>Team accounts</h4><div class="big">3 users</div><small>1 Owner · 2 Cashiers</small></div>
+<div class="card s2"><h4>Approvals security</h4><div class="big">Owner PIN (1234)</div><small>Required for voids, discounts, adjustments</small></div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Staff roster &amp; roles</h4>
+<small class="mu">Prompt 4: PIN login · Approvals modal · Audit log</small>
+</div>
+<div class="row"><div><b>Owner</b> <small class="mu">(PIN: 1234)</small></div><span class="ok">Full access (pricing, voids, adjustments, reports)</span></div>
+<div class="row"><div><b>Cashier 1</b> <small class="mu">(PIN: 1111) · Current user</small></div><span>Sell &amp; Till only</span></div>
+<div class="row"><div><b>Cashier 2</b> <small class="mu">(PIN: 2222)</small></div><span>Sell &amp; Till only</span></div>
+</div>
+</div>`;
+}
+
+function settingsView() {
+  return `<div class="dash">
+<div class="card"><h4>Shop profile</h4><div class="big">Cellar &amp; Co.</div><small>Wines &amp; Spirits · Retail</small></div>
+<div class="card"><h4>KRA PIN</h4><div class="big" style="font-size:1.35rem">P000000000X</div><small>VAT 16% inclusive</small></div>
+<div class="card s2"><h4>Hardware setup</h4><div class="big">1 Till station</div><small>80mm printer · Cash drawer · Barcode scanner</small></div>
+
+<div class="card s2" style="grid-column:1/-1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+<h4>Shop &amp; system configuration</h4>
+<small class="mu">Prompt 8: Receipt editor · eTIMS settings · Hardware test</small>
+</div>
+<div class="row"><span>Store name</span><b>CELLAR &amp; CO. WINES &amp; SPIRITS</b></div>
+<div class="row"><span>Location</span><b>Demo shop · Nairobi, Kenya</b></div>
+<div class="row"><span>Tax rate</span><b>VAT 16% (Inclusive)</b></div>
+<div class="row"><span>eTIMS status</span><b class="ok">Fields enabled (Verification pending)</b></div>
+<div class="row"><span>Age check (18+)</span><b class="ok">Mandatory before charging</b></div>
+<div class="row"><span>Receipt layout</span><b>80mm thermal paper with serrated edge</b></div>
+<div class="row"><span>Offline operation</span><b class="ok">PWA offline-first enabled</b></div>
+</div>
+</div>`;
+}
+
+function renderScreen(v) {
+  switch (v) {
+    case "sell": return sell();
+    case "stock": return stockView();
+    case "products": return productsView();
+    case "till": return tillView();
+    case "reports": return dash();
+    case "users": return usersView();
+    case "settings": return settingsView();
+    default: return sell();
+  }
+}
+
+// Payment & Receipt Modals
+function pay() {
+  const d = state.payment;
+  const t = total();
+  let b, ok;
+  if (d.m == "cash") {
+    ok = d.tend >= t;
+    const q = [t, ...[500, 1000, 2000, 5000].filter(x => x > t)].slice(0, 4);
+    b = `<div><label class="fl" for="tend">Amount received</label><div class="inp"><span>KES</span><input id="tend" inputmode="numeric" value="${d.tend}" oninput="upd('tend',+this.value.replace(/\\D/g,''),'tend')"></div></div><div class="qk">${q.map(x=>`<button class="${x==d.tend?"on":""}" onclick="upd('tend',${x})">${x==t?"Exact":x.toLocaleString()}</button>`).join("")}</div><div class="sum ${ok?"good":"bad"}"><span>${ok?"Change due":"Still to pay"}</span><b>${kes(Math.abs(d.tend-t))}</b></div>`;
+  } else if (state.offline) {
+    ok = d.ref.length >= 8;
+    b = `<div class="bn">Offline · enter the confirmation code from the customer’s M-Pesa SMS. It will be flagged for reconciliation.</div><div><label class="fl" for="ref">M-Pesa code</label><div class="inp"><input id="ref" placeholder="SJK4X9P2QA" value="${d.ref}" oninput="upd('ref',this.value.toUpperCase(),'ref')"></div></div>`;
+  } else {
+    ok = d.st == "ok";
+    b = `<div><label class="fl" for="phone">Customer phone</label><div class="inp"><input id="phone" inputmode="tel" value="${d.phone}" oninput="upd('phone',this.value,'phone')"></div></div>` + (ok ? `<div class="sum good"><span>Payment received</span><b>${d.ref}</b></div>` : `<button class="stk" ${d.st=="idle"?"":"disabled"} onclick="stk()">${d.st=="wait"?"Waiting for customer PIN…":"Send STK push"}</button>`);
+  }
+  return `<div class="ov"><div class="mod"><div class="mh"><div><small>Amount due</small><h3>${kes(t)}</h3></div><button class="x" aria-label="Close" onclick="state.payment=null;render()">✕</button></div><div class="mt"><button class="${d.m=="cash"?"on":""}" onclick="upd('m','cash')">${IC.cash} Cash</button><button class="${d.m=="mpesa"?"on":""}" onclick="upd('m','mpesa')">${IC.phone} M-Pesa</button></div><div class="mb">${b}</div><div class="ft"><button class="ghost" onclick="state.payment=null;render()">Cancel</button><button class="pri" style="flex:2" ${ok?"":"disabled"} onclick="finish()">Complete sale</button></div></div></div>`;
+}
+
+function rcpt() {
+  const s = state.receipt;
+  const st = s.m == "cash" ? "Cash received" : s.pend ? "M-Pesa · pending reconciliation" : "M-Pesa confirmed";
+  return `<div class="ov"><div class="rw"><div class="rok">${IC.ok}<div><b>Sale complete</b><small>${st}</small></div></div><div class="paper"><div class="c"><b style="font-size:1rem">CELLAR &amp; CO.</b><br>WINES &amp; SPIRITS<br><span class="m">Demo shop · Nairobi · PIN P000000000X</span></div><hr><div class="r"><span>${s.no}</span><span>${s.at.toLocaleString("en-KE",{dateStyle:"short",timeStyle:"short"})}</span></div><div class="r m"><span>Cashier 1</span><span>Till 1</span></div><hr>${s.lines.map(l=>`<div><div class="r"><span>${l.n}</span><b>${(l.q*l.pr).toLocaleString()}</b></div><div class="m">${l.q} × ${l.pr.toLocaleString()} · ${l.s} · ${U[l.u]}</div></div>`).join("")}<hr><div class="r m"><span>Subtotal (excl. VAT)</span><span>${Math.round(s.t*100/116).toLocaleString()}</span></div><div class="r m"><span>VAT 16%</span><span>${Math.round(s.t*16/116).toLocaleString()}</span></div><div class="r tt"><span>TOTAL</span><span>${kes(s.t)}</span></div><div class="r m"><span>${s.m=="cash"?"Cash":"M-Pesa "+s.ref}</span><span>${s.m=="cash"?"Change "+(s.tend-s.t).toLocaleString():s.pend?"Pending":"Paid"}</span></div><hr><div class="qr">eTIMS QR</div><div class="c m">Thank you · Drink responsibly · 18+</div></div><div class="ft"><button onclick="toast('Sent to printer · drawer opened (demo)')">Print receipt</button><button class="pri" onclick="state.receipt=null;render()">New sale</button></div></div></div>`;
+}
+
+// Master Render Function
+function render() {
+  if (!state.cart.length) state.cartOpen = false;
+  const curScreen = SCREENS[state.view] || SCREENS.sell;
+  const screensList = Object.values(SCREENS);
+
+  $("app").innerHTML = `
+<div class="app-shell">
+  <!-- Desktop Persistent Side Navigation -->
+  <aside class="side-nav" aria-label="Main Navigation">
+    <div class="side-brand">
+      <div class="brand">
+        <b>Cellar POS</b>
+        <span>Wines &amp; Spirits</span>
+      </div>
+    </div>
+    <nav>
+      ${screensList.map(s => `
+        <button class="nav-btn ${state.view === s.id ? "on" : ""}" onclick="go('${s.id}')">
+          ${NAV_ICONS[s.id] || ""}
+          <span>${s.label}</span>
+        </button>
+      `).join("")}
+    </nav>
+    <div class="side-foot">
+      <div class="side-user">
+        <b>${state.till.cashier}</b>
+        <small>Till ${state.till.tillNumber} · Float ${kes(state.till.float)}</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="app-main">
+    <header class="top">
+      <div class="brand mobile-brand">
+        <b>Cellar POS</b>
+        <span>Prototype · demo data</span>
+      </div>
+      <div class="desktop-title">
+        <b>${curScreen.title}</b>
+        <span>${curScreen.subtitle}</span>
+      </div>
+      <div class="rt">
+        <button class="pill ${state.offline ? "wn" : "ok"}" onclick="tOff()">● ${state.offline ? "Offline" : "Online"}</button>
+        <button class="pill" onclick="tTheme()">Light / Dark</button>
+      </div>
+    </header>
+
+    ${state.offline ? `<div class="bn">Offline mode · sales are saved on this device · ${state.syncCount} waiting to sync</div>` : ""}
+
+    <main>
+      ${renderScreen(state.view)}
+    </main>
+  </div>
+
+  <!-- Mobile Persistent Bottom Navigation -->
+  <nav class="bottom-nav" aria-label="Mobile Navigation">
+    ${screensList.map(s => `
+      <button class="b-nav-btn ${state.view === s.id ? "on" : ""}" onclick="go('${s.id}')">
+        ${NAV_ICONS[s.id] || ""}
+        <span>${s.label}</span>
+      </button>
+    `).join("")}
+  </nav>
+</div>
+${state.payment ? pay() : ""}
+${state.receipt ? rcpt() : ""}`;
+}
+
+render();
+</script></body></html>
