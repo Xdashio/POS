@@ -198,24 +198,25 @@ const RAW_CATALOG = [
   ["Robertson Chardonnay","750ml","Wine",1700,6,0,0,10]
 ];
 
-// Helper: convert quantity in unit to base units (tot if product has tots; bottle otherwise)
+// Helper: convert quantity in unit to base units (tot for spirits that sell tots, bottle otherwise)
 function toBaseUnits(p, u, qty) {
-  if (p.tn > 0) {
-    if (u === "t") return qty;
-    if (u === "b") return qty * p.tn;
-    if (u === "c") return qty * p.k * p.tn;
+  const factor = p.baseUnitsPerBottle || (p.tn > 0 ? p.tn : 1);
+  if (p.baseUnit === "tot") {
+    if (u === "t") return Math.round(qty);
+    if (u === "b") return Math.round(qty * factor);
+    if (u === "c") return Math.round(qty * p.k * factor);
   } else {
-    if (u === "b") return qty;
-    if (u === "c") return qty * p.k;
+    if (u === "b") return Math.round(qty);
+    if (u === "c") return Math.round(qty * p.k);
   }
-  return qty;
+  return Math.round(qty);
 }
 
-// Initial opening stock movements for the append-only ledger
+// Initial opening stock movements for the append-only ledger (integer quantities in base units)
 const initialMovements = RAW_CATALOG.map((a, i) => {
   const tn = a[5];
   const btlStock = a[7];
-  const baseQty = tn > 0 ? btlStock * tn : btlStock;
+  const baseQty = tn > 0 ? Math.round(btlStock * tn) : Math.round(btlStock);
   return {
     id: `mov_init_${i + 1}`,
     productId: i,
@@ -268,8 +269,9 @@ const state = {
     }
   },
   
-  // Product catalog with dynamically derived stock
+  // Product catalog with per-product baseUnit and dynamically derived bottle stock
   products: RAW_CATALOG.map((a, i) => {
+    const tn = a[5];
     const prod = {
       id: i,
       n: a[0],
@@ -277,8 +279,10 @@ const state = {
       g: ["Beer","Whisky","Wine"].includes(a[2]) ? a[2] : "Spirits",
       b: a[3],
       k: a[4],
-      tn: a[5],
+      tn: tn,
       t: a[6],
+      baseUnit: tn > 0 ? "tot" : "bottle",
+      baseUnitsPerBottle: tn > 0 ? tn : 1,
       cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
     };
     Object.defineProperty(prod, "st", {
@@ -298,20 +302,29 @@ const state = {
   stockMovements: initialMovements
 };
 
-// Derived Stock Calculations
-function getProductStock(productId) {
-  const p = state.products.find(x => x.id === productId);
-  if (!p) return 0;
-  const totUnits = state.stockMovements
-    .filter(m => m.productId === productId)
-    .reduce((sum, m) => sum + m.qty, 0);
-  return p.tn > 0 ? totUnits / p.tn : totUnits;
-}
-
+// Derived Stock Calculations (base units in ledger -> converted to bottles only for display)
 function getProductBaseUnits(productId) {
   return state.stockMovements
     .filter(m => m.productId === productId)
     .reduce((sum, m) => sum + m.qty, 0);
+}
+
+function getProductStock(productId) {
+  const p = state.products.find(x => x.id === productId);
+  if (!p) return 0;
+  const baseUnits = getProductBaseUnits(productId);
+  return p.baseUnitsPerBottle > 1 ? baseUnits / p.baseUnitsPerBottle : baseUnits;
+}
+
+// Append a stock movement to the ledger, blocking any operation that causes negative stock
+function recordStockMovement(m) {
+  m.qty = Math.round(m.qty);
+  const currentBase = getProductBaseUnits(m.productId);
+  if (m.qty < 0 && (currentBase + m.qty) < 0) {
+    return false; // Block negative stock
+  }
+  state.stockMovements.push(m);
+  return true;
 }
 
 // Backwards compatibility aliases
@@ -406,26 +419,65 @@ function toast(m) {
 }
 
 function add(id) {
+  const p = state.products.find(x => x.id === id);
+  if (!p || getProductBaseUnits(id) <= 0) {
+    toast("Item is out of stock");
+    return false;
+  }
+  const currentInCartBase = state.cart
+    .filter(x => x.id === id)
+    .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
+  const addBase = toBaseUnits(p, "b", 1);
+  if (currentInCartBase + addBase > getProductBaseUnits(id)) {
+    toast("Cannot add: exceeds available stock");
+    return false;
+  }
   const l = state.cart.find(x => x.id == id && x.u == "b");
   l ? l.q++ : state.cart.push({ id, u: "b", q: 1 });
   render();
+  return true;
 }
 
 function qty(i, d) {
-  state.cart[i].q += d;
-  if (state.cart[i].q < 1) state.cart.splice(i, 1);
+  const l = state.cart[i];
+  if (!l) return false;
+  const p = state.products.find(x => x.id === l.id);
+  if (d > 0) {
+    const currentInCartBase = state.cart
+      .filter(x => x.id === l.id)
+      .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
+    const addBase = toBaseUnits(p, l.u, d);
+    if (currentInCartBase + addBase > getProductBaseUnits(l.id)) {
+      toast("Cannot add: exceeds available stock");
+      return false;
+    }
+  }
+  l.q += d;
+  if (l.q < 1) state.cart.splice(i, 1);
   render();
+  return true;
 }
 
 function unit(i, u) {
-  state.cart[i].u = u;
   const l = state.cart[i];
+  if (!l) return false;
+  const p = state.products.find(x => x.id === l.id);
+  const otherLinesBase = state.cart
+    .filter((x, idx) => idx !== i && x.id === l.id)
+    .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
+  const newBase = toBaseUnits(p, u, l.q);
+  if (otherLinesBase + newBase > getProductBaseUnits(l.id)) {
+    toast("Cannot switch unit: exceeds available stock");
+    return false;
+  }
+  l.u = u;
   const j = state.cart.findIndex((x, k) => k != i && x.id == l.id && x.u == u);
   if (j > -1) {
     state.cart[j].q += l.q;
     state.cart.splice(i, 1);
   }
   render();
+  return true;
 }
 
 function keep(id) {
@@ -485,6 +537,19 @@ function stk() {
 function finish() {
   const t = total();
   const d = state.payment;
+
+  // Validate all lines to ensure negative stock is blocked
+  for (const l of state.cart) {
+    const p = state.products.find(x => x.id === l.id);
+    const currentCartBase = state.cart
+      .filter(x => x.id === l.id)
+      .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
+    if (currentCartBase > getProductBaseUnits(p.id)) {
+      toast("Sale blocked: exceeds available stock for " + p.n);
+      return false;
+    }
+  }
+
   const s = {
     no: "INV-" + String(++state.invoiceSeq).padStart(6, "0"),
     lines: state.cart.map(l => {
@@ -499,11 +564,11 @@ function finish() {
     at: new Date()
   };
 
-  // Append-only stock movements ledger derivation
-  state.cart.forEach(l => {
+  // Append-only stock movements ledger derivation (recording movements safely)
+  for (const l of state.cart) {
     const p = state.products.find(x => x.id === l.id);
     const baseDelta = toBaseUnits(p, l.u, l.q);
-    state.stockMovements.push({
+    const ok = recordStockMovement({
       id: "mov_" + (++state.movementSeq),
       productId: p.id,
       type: "sale",
@@ -515,7 +580,11 @@ function finish() {
       user: state.till.cashier,
       at: new Date()
     });
-  });
+    if (!ok) {
+      toast("Stock movement blocked: would result in negative stock");
+      return false;
+    }
+  }
 
   if (state.offline) state.syncCount++;
   state.sales.push(s);
@@ -524,6 +593,7 @@ function finish() {
   state.cart = [];
   state.ageVerified = false;
   render();
+  return true;
 }
 
 // Screen Renderers
@@ -540,7 +610,7 @@ function sell() {
 <div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.length} transactions</small></div></div>
 <section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
 <div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
-<div class="grid">${f.map(p=>`<button class="pt" onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${p.st<=5?"low":""}">${p.st<=5?"Low · ":""}${fs(p.st)} in stock</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
+<div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${p.st<=5?"low":""}">${p.st<=0?"Out of stock":p.st<=5?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
 <aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
 <div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div><div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
 <div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified?"":"disabled"} onclick="charge()">${state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;

@@ -13,7 +13,7 @@ Build a production POS for a Kenyan wines & spirits **retail shop**. The clickab
 - Owner pain points: stock theft/shrinkage, cash vs M-Pesa mismatches, knowing what to reorder, slow checkout.
 
 ## Rules
-- Stock is never stored as a number alone: it is derived from an append-only **stock movements ledger** (sale, receipt, adjustment, void, stock take). Base unit = tot.
+- Stock is never stored as a number alone: it is derived from an append-only **stock movements ledger** (sale, receipt, adjustment, void, stock take). Base unit is per product (tot for spirits that sell tots, bottle otherwise), converted to bottles only for display.
 - Money as integers in KES (no floats). Prices include VAT 16%; show VAT split on receipts.
 - Roles: `cashier` sells; `owner` controls prices, voids, discounts, stock adjustments, reports. Log every void, discount, price override and adjustment with user + time.
 - Offline M-Pesa: cashier enters the confirmation code manually; sale is flagged `pending reconciliation`.
