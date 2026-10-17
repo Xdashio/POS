@@ -34,9 +34,16 @@ function chromiumPath() {
   return undefined;
 }
 
+async function signIn(page, pin) {
+  await page.locator('#login-pin').fill(pin);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign out' }).waitFor();
+}
+
 async function runCheckout(page, width) {
   await page.setViewportSize({ width, height: 900 });
   await page.goto(`file://${path.resolve(__dirname, '../prototype/index.html')}`, { waitUntil: 'domcontentloaded' });
+  await signIn(page, '1111');
   await page.getByRole('button', { name: 'Age verified' }).click();
 
   if (width === 1366) {
@@ -79,6 +86,30 @@ async function runCheckout(page, width) {
   try {
     const desktop = await browser.newPage({ viewport: { width: 1366, height: 900 } });
     await runCheckout(desktop, 1366);
+    const cashierNav = await desktop.locator('.side-nav nav .nav-btn span').allTextContents();
+    assert.deepEqual(cashierNav.map(label => label.trim()).sort(), ['Sell', 'Till'], 'Cashier navigation should only show Sell and their own Till');
+    assert.deepEqual(await desktop.evaluate(() => ({ allowed: go('reports'), view: state.view })), { allowed: false, view: 'sell' }, 'Cashier should not reach owner-only screens');
+
+    await desktop.getByRole('button', { name: 'Age verified' }).click();
+    const stockBeforeVoid = await desktop.evaluate(() => getProductBaseUnits(0));
+    await desktop.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
+    await desktop.getByRole('button', { name: /Charge KES/ }).click();
+    await desktop.getByRole('button', { name: 'Complete sale' }).click();
+    const voidInvoice = await desktop.evaluate(() => state.receipt.no);
+    await desktop.getByRole('button', { name: 'Void sale' }).click();
+    assert.match(await desktop.locator('#approval-title').innerText(), /Void sale/);
+    await desktop.locator('#approval-pin').fill('1111');
+    await desktop.getByRole('button', { name: 'Approve & continue' }).click();
+    await desktop.getByText('Owner PIN is incorrect.').waitFor();
+    assert.equal(await desktop.evaluate(() => state.products[0].st), stockBeforeVoid - 1, 'Invalid owner PIN must not void a sale');
+    await desktop.locator('#approval-pin').fill('1234');
+    await desktop.getByRole('button', { name: 'Approve & continue' }).click();
+    assert.equal(await desktop.evaluate(invoice => state.sales.find(sale => sale.no === invoice).voided, voidInvoice), true, 'Owner approval should mark the sale voided');
+    assert.equal(await desktop.evaluate(() => getProductBaseUnits(0)), stockBeforeVoid, 'Approved void should restore the sold stock');
+    await desktop.getByRole('button', { name: 'New sale' }).click();
+    await desktop.getByRole('button', { name: 'Sign out' }).click();
+    await signIn(desktop, '1234');
+
     await desktop.getByRole('button', { name: 'Stock', exact: true }).click();
 
     const before = await desktop.evaluate(() => ({
@@ -109,6 +140,8 @@ async function runCheckout(page, width) {
     await desktop.locator('#product-supplier').selectOption({ label: 'UDV Kenya (Diageo)' });
     assert.match(await desktop.locator('#product-margin').innerText(), /47\.4% gross margin/, 'Margin should update live from retail and buy price');
     await desktop.getByRole('button', { name: 'Save product' }).click();
+    await desktop.locator('#approval-pin').fill('1234');
+    await desktop.getByRole('button', { name: 'Approve & continue' }).click();
     const edited = await desktop.evaluate(() => {
       const product = state.products.find(item => item.n === 'Hennessy VS');
       const change = state.priceChanges[state.priceChanges.length - 1];
@@ -117,7 +150,7 @@ async function runCheckout(page, width) {
     assert.equal(edited.price, 7600, 'Edited price should be saved');
     assert.equal(edited.reorderLevel, 2, 'Edited reorder level should be saved');
     assert.equal(edited.supplier, 'UDV Kenya (Diageo)', 'Preferred supplier should be saved');
-    assert.deepEqual(edited.change, { oldPrice: 7500, newPrice: 7600, user: 'Cashier 1', at: true }, 'Price log should retain actor, timestamp, and old/new price');
+    assert.deepEqual(edited.change, { oldPrice: 7500, newPrice: 7600, user: 'Owner', at: true }, 'Price log should retain actor, timestamp, and old/new price');
     assert.match(await desktop.locator('.price-log').innerText(), /KES 7,500 → KES 7,600 bottle/);
     await desktop.getByRole('button', { name: 'Sell', exact: true }).click();
     const editedCard = desktop.locator('.pt').filter({ hasText: 'Hennessy VS' });
@@ -147,9 +180,19 @@ async function runCheckout(page, width) {
 
     const tillPage = await browser.newPage({ viewport: { width: 1366, height: 900 } });
     await tillPage.goto(`file://${path.resolve(__dirname, '../prototype/index.html')}`, { waitUntil: 'domcontentloaded' });
-    const mpesaSale = await tillPage.evaluate(() => state.products.find(product => product.n === 'Tusker Lager').b);
+    await signIn(tillPage, '1111');
+    const retailPrice = await tillPage.evaluate(() => state.products.find(product => product.n === 'Tusker Lager').b);
+    const mpesaSale = Math.round(retailPrice * 0.9);
     await tillPage.getByRole('button', { name: 'Age verified' }).click();
     await tillPage.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
+    await tillPage.getByRole('button', { name: 'Request 10% discount · Owner approval' }).click();
+    await tillPage.locator('#approval-pin').fill('2222');
+    await tillPage.getByRole('button', { name: 'Approve & continue' }).click();
+    await tillPage.getByText('Owner PIN is incorrect.').waitFor();
+    assert.equal(await tillPage.evaluate(() => state.cartDiscountPercent), 0, 'A cashier discount should remain unapplied without owner approval');
+    await tillPage.locator('#approval-pin').fill('1234');
+    await tillPage.getByRole('button', { name: 'Approve & continue' }).click();
+    assert.equal(await tillPage.evaluate(() => state.cartDiscountPercent), 10, 'Owner approval should apply the requested discount');
     await tillPage.getByRole('button', { name: /Charge KES/ }).click();
     await tillPage.getByRole('button', { name: /M-Pesa/ }).click();
     await tillPage.getByRole('button', { name: 'Send STK push' }).click();
@@ -176,8 +219,15 @@ async function runCheckout(page, width) {
     assert.match(await tillPage.locator('.paper').innerText(), /SHIFT SUMMARY/);
     await tillPage.getByRole('button', { name: 'Done', exact: true }).click();
 
+    await tillPage.getByRole('button', { name: 'Sign out' }).click();
+    await signIn(tillPage, '1234');
     await tillPage.getByRole('button', { name: 'Reports', exact: true }).click();
     assert.match(await tillPage.locator('.dash').innerText(), /M-Pesa short in shift close test/, 'Dashboard should show the latest shift variance reason');
+    await tillPage.getByRole('complementary', { name: 'Main Navigation' }).getByRole('button', { name: 'Audit log', exact: true }).click();
+    await tillPage.getByRole('combobox', { name: 'Filter by action' }).selectOption({ label: 'Discount' });
+    assert.match(await tillPage.locator('.audit-list').innerText(), /Tusker Lager|sale/, 'Audit log action filter should show discount events');
+    await tillPage.getByRole('button', { name: 'Sign out' }).click();
+    await signIn(tillPage, '1111');
     await tillPage.getByRole('button', { name: 'Sell', exact: true }).click();
     await tillPage.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
     await tillPage.getByRole('button', { name: 'Age verified' }).click();
@@ -189,6 +239,10 @@ async function runCheckout(page, width) {
     await tillPage.locator('#opening-float').fill('6000');
     await tillPage.getByRole('button', { name: 'Open shift', exact: true }).click();
     assert.deepEqual(await tillPage.evaluate(() => ({ status: state.till.status, float: state.till.openingFloat })), { status: 'open', float: 6000 }, 'Reopened till should record its opening float');
+    await tillPage.getByRole('button', { name: 'Sign out' }).click();
+    await signIn(tillPage, '2222');
+    assert.deepEqual(await tillPage.evaluate(() => ({ number: state.till.tillNumber, status: state.till.status })), { number: 2, status: 'closed' }, 'Cashier 2 should only access their own Till 2');
+    assert.deepEqual((await tillPage.locator('.side-nav nav .nav-btn span').allTextContents()).map(label => label.trim()).sort(), ['Sell', 'Till'], 'Second cashier navigation should remain limited to Sell and Till');
     console.log('✓ Till close reconciles denomination cash and M-Pesa, requires variance reason and owner sign-off, shows a shift receipt, updates Reports, blocks closed-till sales, and reopens with a float.');
     await tillPage.close();
   } finally {

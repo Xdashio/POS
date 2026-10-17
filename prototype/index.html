@@ -157,8 +157,10 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .paper .c{text-align:center}.paper hr{border:0;border-top:1px dashed #b9b4aa;margin:.2rem 0;width:100%}.paper .r{display:flex;justify-content:space-between;gap:.6rem}
 .paper .m{color:#6c6872;font-size:.75rem}.paper .tt{font-size:1.2rem;font-weight:700}.paper .qr{border-color:#b9b4aa;color:#6c6872}
 .till-modal{width:min(42rem,100%)}.denom-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem}.denom{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600;color:var(--mu)}.denom input{min-height:2.75rem;padding:0 .5rem;text-align:center}.shift-expect{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.shift-expect>div{display:flex;flex-direction:column;gap:.25rem;padding:.8rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm)}.shift-expect span{color:var(--mu);font-size:.8rem}.shift-expect b{font-size:1.1rem}
+.login-shell{min-height:100vh;display:grid;place-items:center;padding:1.25rem}.login-card{width:min(29rem,100%);display:flex;flex-direction:column;gap:1rem}.login-brand,.audit-heading{display:flex;justify-content:space-between;align-items:center;gap:1rem}.login-card h1{margin:0;font-size:2rem}.login-card p{margin:0}.login-card form{display:flex;flex-direction:column;gap:.65rem}.login-error{color:var(--wn);font-weight:600}.demo-hint{display:flex;flex-direction:column;gap:.55rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm);padding:.9rem}.demo-hint>div{display:flex;justify-content:space-between;gap:1rem}.demo-hint code{font:700 1rem ui-monospace,Menlo,Consolas,monospace;color:var(--act)}.signed-in-user{font-size:.8rem;color:var(--mu);font-weight:700}.approval-overlay{z-index:25}.approval-modal{width:min(32rem,100%)}.approval-requester{padding:.75rem;background:var(--tile);border-radius:var(--rm)}.audit-screen{max-width:80rem;margin:0 auto}.audit-screen>.card{display:flex;flex-direction:column;gap:1rem}.audit-heading h3{margin:0}.audit-filters{display:grid;grid-template-columns:repeat(4,minmax(8rem,1fr)) auto;align-items:end;gap:.65rem}.audit-filters label{display:flex;flex-direction:column;gap:.35rem;color:var(--mu);font-size:.78rem;font-weight:700}.audit-filters select,.audit-filters input{font-size:.95rem;min-height:2.75rem}.audit-list{display:flex;flex-direction:column}.audit-entry{display:grid;grid-template-columns:minmax(12rem,.8fr) minmax(0,2fr);gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--bd)}.audit-entry>div{display:flex;flex-direction:column;gap:.2rem;min-width:0}.audit-entry small{color:var(--mu)}.audit-empty{padding:1rem 0}
 @media (max-width:640px){.mod{width:100%;border-radius:var(--rl) var(--rl) 0 0}.rw{padding:1rem}}
 @media (max-width:640px){.denom-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.till-modal .mb{max-height:65vh}.denom input{min-height:2.75rem}}
+@media (max-width:700px){.audit-filters{grid-template-columns:1fr 1fr}.audit-filters button{grid-column:1/-1}.audit-entry{grid-template-columns:1fr;gap:.4rem}.signed-in-user{display:none}.login-card{padding:1.2rem}}
 h3,.big,.brand b,.pt b{letter-spacing:-.02em}
 button{font-weight:600}.card h4,.fl{font-weight:700;letter-spacing:.09em}
 @media (min-width:1000px){.sell,.tiles,.cart,.prod{gap:1.25rem}.card{padding:1.5rem}.dash{gap:1.25rem}}
@@ -283,7 +285,25 @@ const initialMovements = [
 // Central Application State
 const state = {
   view: "sell", // active screen: "sell" | "stock" | "products" | "till" | "reports" | "users" | "settings"
+  users: [
+    { id: "owner", name: "Owner", role: "owner", pin: "1234" },
+    { id: "cashier1", name: "Cashier 1", role: "cashier", pin: "1111", tillNumber: 1 },
+    { id: "cashier2", name: "Cashier 2", role: "cashier", pin: "2222", tillNumber: 2 }
+  ],
+  currentUser: null,
+  loginPin: "",
+  loginError: "",
+  approval: null,
+  approvalPin: "",
+  approvalError: "",
+  auditLog: [],
+  auditSequence: 0,
+  auditFilterUser: "all",
+  auditFilterAction: "all",
+  auditFilterFrom: "",
+  auditFilterTo: "",
   cartOpen: false,
+  cartDiscountPercent: 0,
   selectedCategory: "All",
   searchQuery: "",
   ageVerified: false,
@@ -406,6 +426,14 @@ const state = {
   stockMovements: initialMovements
 };
 
+state.userTills = {
+  cashier1: state.till,
+  cashier2: {
+    status: "closed", float: 0, cashier: "Cashier 2", tillNumber: 2,
+    openingFloat: 0, openedAt: null, salesStartIndex: state.sales.length
+  }
+};
+
 // Derived Stock Calculations (base units in ledger -> converted to bottles only for display)
 function getProductBaseUnits(productId) {
   return state.stockMovements
@@ -462,11 +490,27 @@ const fac = (p, u) => u == "b" ? 1 : u == "c" ? p.k : (p.tn ? 1 / p.tn : 1);
 const kes = n => "KES " + Math.round(n).toLocaleString("en-KE");
 const esc = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 const fs = n => Number.isInteger(n) ? n : n.toFixed(1);
-const total = () => state.cart.reduce((a, l) => {
+const cartSubtotal = () => state.cart.reduce((a, l) => {
   const p = state.products.find(x => x.id === l.id);
   return a + (p ? price(p, l.u) * l.q : 0);
 }, 0);
+const total = () => Math.round(cartSubtotal() * (1 - (state.cartDiscountPercent || 0) / 100));
 const units = p => p.tn ? ["b", "c", "t"] : ["b", "c"];
+
+function requestCartDiscount() {
+  if (!state.cart.length || state.cartDiscountPercent) return false;
+  const percent = 10;
+  requestOwnerApproval("Discount", `${percent}% off this sale (${kes(cartSubtotal())} before discount)`, () => {
+    state.cartDiscountPercent = percent;
+    render();
+  });
+  return true;
+}
+function clearCart() {
+  state.cart = [];
+  state.cartDiscountPercent = 0;
+  render();
+}
 
 // SVG Icons
 const ICO = {
@@ -502,15 +546,111 @@ const SCREENS = {
   till: { id: "till", label: "Till", title: "Till & Shifts", subtitle: "Cash & shift reconciliation" },
   reports: { id: "reports", label: "Reports", title: "Reports & Dashboard", subtitle: "Sales, velocity & shrinkage" },
   users: { id: "users", label: "Users", title: "Users & Security", subtitle: "Roles, PINs & audit log" },
+  audit: { id: "audit", label: "Audit log", title: "Audit log", subtitle: "Staff actions & approvals" },
   settings: { id: "settings", label: "Settings", title: "Settings & Profile", subtitle: "Shop config & hardware" }
 };
+NAV_ICONS.audit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5M8 2v4M16 2v4"/></svg>';
+
+function currentActor() {
+  return state.currentUser ? state.currentUser.name : state.till.cashier;
+}
+function addAuditEntry(action, details, user = currentActor()) {
+  const entry = { id: ++state.auditSequence, user, action, details, at: new Date() };
+  state.auditLog.push(entry);
+  return entry;
+}
+function loginWithPin(pin) {
+  const user = state.users.find(candidate => candidate.pin === String(pin).trim());
+  if (!user) {
+    state.loginPin = "";
+    state.loginError = "PIN not recognised. Try a demo PIN below.";
+    render();
+    return false;
+  }
+  if (state.currentUser?.role === "cashier") state.userTills[state.currentUser.id] = state.till;
+  state.currentUser = user;
+  state.till = user.role === "cashier" ? state.userTills[user.id] : state.userTills.cashier1;
+  state.till.cashier = user.role === "cashier" ? user.name : state.till.cashier;
+  state.loginPin = "";
+  state.loginError = "";
+  state.view = "sell";
+  addAuditEntry("Login", `Signed in to Till ${state.till.tillNumber}`, user.name);
+  render();
+  return true;
+}
+function submitPinLogin() {
+  return loginWithPin($("login-pin").value);
+}
+function logout() {
+  if (!state.currentUser) return false;
+  const leaving = state.currentUser;
+  if (leaving.role === "cashier") state.userTills[leaving.id] = state.till;
+  addAuditEntry("Logout", "Signed out", leaving.name);
+  state.currentUser = null;
+  state.payment = null;
+  state.receipt = null;
+  state.productEditor = null;
+  state.productDraft = null;
+  state.approval = null;
+  state.cart = [];
+  state.cartDiscountPercent = 0;
+  state.ageVerified = false;
+  state.view = "sell";
+  render();
+  return true;
+}
+function canAccessScreen(screenId) {
+  return state.currentUser?.role === "owner" || screenId === "sell" || screenId === "till";
+}
+function visibleScreens() {
+  return Object.values(SCREENS).filter(screen => canAccessScreen(screen.id));
+}
+function requestOwnerApproval(action, details, onApproved) {
+  if (!state.currentUser) return false;
+  state.approval = { action, details, requestedBy: currentActor(), onApproved };
+  state.approvalPin = "";
+  state.approvalError = "";
+  render();
+  return false;
+}
+function cancelOwnerApproval() {
+  state.approval = null;
+  state.approvalPin = "";
+  state.approvalError = "";
+  render();
+}
+function approveOwnerAction() {
+  if (!state.approval) return false;
+  const owner = state.users.find(candidate => candidate.role === "owner" && candidate.pin === String(state.approvalPin));
+  if (!owner) {
+    state.approvalError = "Owner PIN is incorrect.";
+    render();
+    return false;
+  }
+  const approval = state.approval;
+  state.approval = null;
+  state.approvalPin = "";
+  state.approvalError = "";
+  addAuditEntry(approval.action, `${approval.details} · Approved by ${owner.name}`, approval.requestedBy);
+  approval.onApproved({ owner, requestedBy: approval.requestedBy });
+  return true;
+}
 
 function navigateTo(v) {
   if (v === "dash") v = "reports";
   if (SCREENS[v]) {
+    if (!state.currentUser) return false;
+    if (!canAccessScreen(v)) {
+      state.view = "sell";
+      render();
+      toast("Owner access required");
+      return false;
+    }
     state.view = v;
     render();
+    return true;
   }
+  return false;
 }
 const go = navigateTo;
 
@@ -636,7 +776,7 @@ function list() {
 
 const CASH_DENOMINATIONS = [1000, 500, 200, 100, 50, 40, 20, 10, 5, 1];
 function activeShiftSales() {
-  return state.sales.slice(state.till.salesStartIndex || 0);
+  return state.sales.slice(state.till.salesStartIndex || 0).filter(s => !s.voided);
 }
 function shiftExpectedCash() {
   return state.till.openingFloat + activeShiftSales().filter(s => s.m === "cash").reduce((sum, s) => sum + s.t, 0);
@@ -717,6 +857,7 @@ function submitTillOpen() {
   state.till.openingFloat = Math.round(openingFloat);
   state.till.openedAt = new Date();
   state.till.salesStartIndex = state.sales.length;
+  addAuditEntry("Till opened", `Till ${state.till.tillNumber} · float ${kes(state.till.openingFloat)}`);
   state.tillFlow = null;
   state.tillDraft = null;
   render();
@@ -762,6 +903,7 @@ function submitTillClose() {
     ownerSignedOff: true
   };
   state.shiftHistory.push(summary);
+  addAuditEntry("Till closed", `${summary.id} · variance ${kes(summary.totalVariance)} · owner sign-off by ${summary.signedOffBy}`);
   state.till.status = "closed";
   state.till.closedAt = closedAt;
   state.shiftReceipt = summary;
@@ -802,6 +944,7 @@ function finish() {
   }
   const t = total();
   const d = state.payment;
+  const subtotal = cartSubtotal();
 
   // Validate all lines to ensure negative stock is blocked
   for (const l of state.cart) {
@@ -821,11 +964,17 @@ function finish() {
       const p = state.products.find(x => x.id === l.id);
       return { n: p.n, s: p.s, u: l.u, q: l.q, pr: price(p, l.u) };
     }),
+    subtotal,
+    discountPercent: state.cartDiscountPercent,
+    discountAmount: subtotal - t,
     t,
     m: d.m,
     ref: d.ref,
     tend: d.tend,
     pend: d.m == "mpesa" && state.offline,
+    user: currentActor(),
+    tillNumber: state.till.tillNumber,
+    voided: false,
     at: new Date()
   };
 
@@ -843,7 +992,7 @@ function finish() {
       unitQty: l.q,
       ref: s.no,
       note: `Sale ${s.no} (${l.q} ${U[l.u]})${getProductBaseUnits(p.id) - baseDelta < 0 ? " · NEGATIVE STOCK" : ""}`,
-      user: state.till.cashier,
+      user: currentActor(),
       at: new Date()
     });
     if (!ok) {
@@ -854,11 +1003,37 @@ function finish() {
 
   if (state.offline) state.syncCount++;
   state.sales.push(s);
+  addAuditEntry("Sale", `${s.no} · ${kes(s.t)} · ${s.m === "cash" ? "Cash" : "M-Pesa"}`);
   state.receipt = s;
   state.payment = null;
   state.cart = [];
+  state.cartDiscountPercent = 0;
   state.ageVerified = false;
   render();
+  return true;
+}
+
+function requestSaleVoid(saleNo = state.receipt?.no) {
+  const sale = state.sales.find(candidate => candidate.no === saleNo);
+  if (!sale || sale.voided) return false;
+  requestOwnerApproval("Void sale", `${sale.no} · ${kes(sale.t)} · ${sale.lines.map(line => line.n).join(", ")}`, ({ requestedBy }) => {
+    if (sale.voided) return;
+    for (const line of sale.lines) {
+      const product = state.products.find(candidate => candidate.n === line.n);
+      if (!product) continue;
+      recordStockMovement({
+        id: "mov_" + (++state.movementSeq), productId: product.id, type: "void",
+        qty: toBaseUnits(product, line.u, line.q), unit: line.u, unitQty: line.q,
+        ref: sale.no, note: `Voided sale ${sale.no}`, user: requestedBy, at: new Date()
+      });
+    }
+    sale.voided = true;
+    sale.voidedAt = new Date();
+    sale.voidedBy = requestedBy;
+    state.receipt = sale;
+    render();
+    toast(`${sale.no} voided · stock restored`);
+  });
   return true;
 }
 
@@ -868,41 +1043,43 @@ function sell() {
   const t = total();
   const open = state.cartOpen && state.cart.length;
   const n = state.cart.reduce((a, l) => a + l.q, 0);
-  const sum = state.sales.reduce((a, s) => a + s.t, 0);
+  const sum = state.sales.filter(s => !s.voided).reduce((a, s) => a + s.t, 0);
   const tillOpen = state.till.status === "open";
 
   return `<div class="sell"><div class="tiles">
 <div class="card t"><h4>Age verified (18+)</h4><div style="display:flex;align-items:center;justify-content:space-between"><span class="${state.ageVerified?"":"low"}">${state.ageVerified?"ID checked":"Required to charge"}</span><button class="sw ${state.ageVerified?"on":""}" aria-label="Age verified" onclick="state.ageVerified=!state.ageVerified;render()"><i></i></button></div></div>
 <div class="card t"><h4>Till</h4><div class="big ${tillOpen?"ok":"low"}">${tillOpen?"Open":"Closed"}</div><small>${tillOpen?`Float ${kes(state.till.float)} · ${state.till.cashier}`:"Open the till before charging"}</small></div>
-<div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.length} transactions</small></div></div>
+<div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.filter(s=>!s.voided).length} transactions</small></div></div>
 <section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
 <div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
 <div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0&&state.zeroStockPolicy==="block"?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${isLowStock(p)?"low":""}">${p.st<=0?"Out of stock":isLowStock(p)?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
 <aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
-<div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div><div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
-<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified&&tillOpen?"":"disabled"} onclick="charge()">${!tillOpen?"Till closed":state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
+${state.cart.length&&!state.cartDiscountPercent?`<button class="ghost discount-action" onclick="requestCartDiscount()">Request 10% discount · Owner approval</button>`:""}<div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div>${state.cartDiscountPercent?`<div class="mu"><span>Owner-approved discount (${state.cartDiscountPercent}%)</span><span>− ${kes(cartSubtotal()-t)}</span></div>`:""}<div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
+<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="clearCart()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified&&tillOpen?"":"disabled"} onclick="charge()">${!tillOpen?"Till closed":state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
 }
 
 function dash() {
-  const sum = state.sales.reduce((a, s) => a + s.t, 0);
-  const cash = base.cash + state.sales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
-  const mp = base.mp + state.sales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
-  const pend = state.sales.filter(s => s.pend).length;
+  const validSales = state.sales.filter(s => !s.voided);
+  const sum = validSales.reduce((a, s) => a + s.t, 0);
+  const cash = base.cash + validSales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
+  const mp = base.mp + validSales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
+  const pend = validSales.filter(s => s.pend).length;
   const top = { ...seed };
-  state.sales.forEach(s => s.lines.forEach(l => top[l.n] = (top[l.n] || 0) + l.q));
+  validSales.forEach(s => s.lines.forEach(l => top[l.n] = (top[l.n] || 0) + l.q));
   const tp = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const mx = tp[0][1];
   const lo = state.products.filter(isLowStock);
   const lastShift = state.shiftHistory[state.shiftHistory.length - 1];
+  const approvalActivity = state.auditLog.filter(entry => ["Void sale", "Discount", "Price override"].includes(entry.action)).slice(-5).reverse();
 
   return `<div class="dash">
 <div class="card s2"><h4>Sales today</h4><div class="big" style="font-size:34px">${kes(base.tot+sum)}</div><small>Cash ${kes(cash)} · M-Pesa ${kes(mp)}</small></div>
-<div class="card"><h4>Transactions</h4><div class="big">${base.n+state.sales.length}</div><small>Avg ${kes((base.tot+sum)/(base.n+state.sales.length))}</small></div>
+<div class="card"><h4>Transactions</h4><div class="big">${base.n+validSales.length}</div><small>Avg ${kes((base.tot+sum)/(base.n+validSales.length))}</small></div>
 <div class="card"><h4>M-Pesa to reconcile</h4><div class="big ${pend?"low":""}">${pend}</div><small>Entered manually while offline</small></div>
 <div class="card s2"><h4>Top sellers</h4>${tp.map(([n,q])=>`<div style="margin-top:8px"><div class="row" style="border:0;padding:0"><span>${n}</span><b>${q}</b></div><div class="bar"><i style="width:${q/mx*100}%"></i></div></div>`).join("")}</div>
 <div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small>${p.st < 0 ? ' <span class="badge b-adj">Negative stock</span>' : ''}</span><span><b class="low">${onHandLabel(p)} left</b> · order ${p.reorderLevel} ctn</span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
 <div class="card s2"><h4>${lastShift?`Latest shift variance · ${lastShift.id}`:"Till variance"}</h4>${lastShift?`<div class="big ${lastShift.totalVariance===0?"ok":"low"}">${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)}</div><div class="row"><span>Cash · expected ${kes(lastShift.cashExpected)}, counted ${kes(lastShift.cashCounted)}</span><b>${lastShift.cashVariance>0?"+":""}${kes(lastShift.cashVariance)}</b></div><div class="row"><span>M-Pesa · expected ${kes(lastShift.mpesaExpected)}, received ${kes(lastShift.mpesaReceived)}</span><b>${lastShift.mpesaVariance>0?"+":""}${kes(lastShift.mpesaVariance)}</b></div><small>${lastShift.reason?`Reason: ${esc(lastShift.reason)} · `:""}Signed off by ${lastShift.signedOffBy} · ${lastShift.closedAt.toLocaleString("en-KE")}</small>`:`<p class="mu">No closed shift yet. Close a till to record its cash and M-Pesa variance.</p>`}</div>
-<div class="card s2"><h4>Voids &amp; discounts</h4><div class="row"><span>Void · Tusker ×2 · Cashier 1</span><small>14:05</small></div><div class="row"><span>10% off · JW Black · owner approved</span><small>12:40</small></div><div class="row"><span>Price override · Chrome Vodka</span><small>09:15</small></div></div></div>`;
+<div class="card s2"><div class="audit-heading"><h4>Voids, discounts &amp; price overrides</h4><button class="row-action" onclick="go('audit')">Audit log</button></div>${approvalActivity.map(entry=>`<div class="row"><span><b>${esc(entry.action)}</b> · ${esc(entry.details)}</span><small>${esc(entry.user)} · ${new Date(entry.at).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}</small></div>`).join("")||`<p class="mu">Approved actions will appear here.</p>`}</div></div>`;
 }
 
 // Stock Management Handlers (Prompt 1)
@@ -1511,6 +1688,7 @@ function renderHistoryTab() {
         <button class="${fType === "all" ? "on" : ""}" onclick="setHistoryFilter('all')">All</button>
         <button class="${fType === "receipt" ? "on" : ""}" onclick="setHistoryFilter('receipt')">Receipts</button>
         <button class="${fType === "sale" ? "on" : ""}" onclick="setHistoryFilter('sale')">Sales</button>
+        <button class="${fType === "void" ? "on" : ""}" onclick="setHistoryFilter('void')">Voids</button>
         <button class="${fType === "adjustment" ? "on" : ""}" onclick="setHistoryFilter('adjustment')">Adjustments</button>
         <button class="${fType === "take" ? "on" : ""}" onclick="setHistoryFilter('take')">Stock takes</button>
         <button class="${fType === "opening" ? "on" : ""}" onclick="setHistoryFilter('opening')">Opening</button>
@@ -1536,6 +1714,7 @@ function renderHistoryTab() {
             const badgeClass =
               m.type === "receipt" ? "b-rec" :
               m.type === "sale" ? "b-sale" :
+              m.type === "void" ? "b-adj" :
               m.type === "adjustment" ? "b-adj" :
               m.type === "take" ? "b-take" : "b-open";
 
@@ -1602,6 +1781,10 @@ function stockView() {
 }
 
 function openProductEditor(id = null) {
+  if (state.currentUser?.role !== "owner") {
+    toast("Owner access required");
+    return false;
+  }
   if (id === null) {
     state.productEditor = { isNew: true, id: null };
     state.productDraft = { n: "", s: "750ml", g: "Spirits", b: 1000, k: 12, tn: 0, t: 0, reorderLevel: 1, preferredSupplier: state.suppliers[0], buyPrice: 650 };
@@ -1666,7 +1849,11 @@ function cleanProductLabel(value) {
   return String(value).replace(/[<>\"]/g, "").trim();
 }
 
-function saveProductEditor() {
+function saveProductEditor(approved = false) {
+  if (state.currentUser?.role !== "owner") {
+    toast("Owner access required");
+    return false;
+  }
   const d = state.productDraft;
   if (!d || !cleanProductLabel(d.n) || !cleanProductLabel(d.s) || ![d.b,d.k,d.tn,d.t,d.reorderLevel,d.buyPrice].every(Number.isFinite) || d.b <= 0 || d.k <= 0 || d.tn < 0 || d.t < 0 || d.reorderLevel < 0 || d.buyPrice < 0) {
     toast("Enter a name, size, and valid product prices");
@@ -1682,17 +1869,25 @@ function saveProductEditor() {
     };
     Object.defineProperty(p, "st", { get() { return getProductStock(this.id); }, enumerable: true });
     state.products.push(p);
+    addAuditEntry("Product added", `${p.n} · ${p.s}`);
   } else {
     const p = state.products.find(product => product.id === state.productEditor.id);
     const oldPrice = p.b, oldCartonPrice = p.cp, oldTotPrice = p.t, oldBuyPrice = p.buyPrice;
     const newCartonPrice = Math.round(d.b * Math.round(d.k) * 0.97 / 10) * 10;
-    if (oldPrice !== d.b || oldCartonPrice !== newCartonPrice || oldTotPrice !== Math.round(d.t) || oldBuyPrice !== d.buyPrice) {
-      state.priceChanges.push({ productId: p.id, productName: p.n, oldPrice, newPrice: d.b, oldCartonPrice, newCartonPrice, oldTotPrice, newTotPrice: Math.round(d.t), oldBuyPrice, newBuyPrice: d.buyPrice, user: state.till.cashier, at: new Date() });
+    const priceChanged = oldPrice !== d.b || oldCartonPrice !== newCartonPrice || oldTotPrice !== Math.round(d.t) || oldBuyPrice !== d.buyPrice;
+    if (priceChanged && !approved) {
+      const summary = `${p.n}: bottle ${kes(oldPrice)} → ${kes(d.b)} · carton ${kes(oldCartonPrice)} → ${kes(newCartonPrice)} · buy ${kes(oldBuyPrice)} → ${kes(d.buyPrice)}`;
+      requestOwnerApproval("Price override", summary, () => saveProductEditor(true));
+      return false;
+    }
+    if (priceChanged) {
+      state.priceChanges.push({ productId: p.id, productName: p.n, oldPrice, newPrice: d.b, oldCartonPrice, newCartonPrice, oldTotPrice, newTotPrice: Math.round(d.t), oldBuyPrice, newBuyPrice: d.buyPrice, user: currentActor(), at: new Date() });
     }
     p.n = cleanProductLabel(d.n); p.s = cleanProductLabel(d.s); p.g = d.g; p.b = d.b; p.k = Math.round(d.k); p.tn = Math.round(d.tn); p.t = Math.round(d.t);
     p.baseUnit = p.tn > 0 ? "tot" : "bottle"; p.baseUnitsPerBottle = p.tn > 0 ? p.tn : 1;
     p.reorderLevel = d.reorderLevel; p.preferredSupplier = d.preferredSupplier; p.buyPrice = d.buyPrice;
     p.cp = Math.round(p.b * p.k * 0.97 / 10) * 10;
+    addAuditEntry("Product edited", `${p.n} · ${priceChanged ? "pricing updated" : "product details updated"}`);
   }
   state.productEditor = null;
   state.productDraft = null;
@@ -1787,21 +1982,61 @@ function shiftRcpt() {
 }
 
 function usersView() {
+  const active = state.currentUser;
   return `<div class="dash">
-<div class="card"><h4>Active session</h4><div class="big">${state.till.cashier}</div><small>Role: Cashier · Till 1</small></div>
+<div class="card"><h4>Active session</h4><div class="big">${active.name}</div><small>Role: ${active.role === "owner" ? "Owner" : `Cashier · Till ${state.till.tillNumber}`}</small></div>
 <div class="card"><h4>Team accounts</h4><div class="big">3 users</div><small>1 Owner · 2 Cashiers</small></div>
-<div class="card s2"><h4>Approvals security</h4><div class="big">Owner PIN (1234)</div><small>Required for voids, discounts, adjustments</small></div>
+<div class="card s2"><h4>Approvals security</h4><div class="big">Owner PIN approval</div><small>Required for voids, discounts and price overrides</small></div>
 
 <div class="card s2" style="grid-column:1/-1">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
 <h4>Staff roster &amp; roles</h4>
-<small class="mu">Prompt 4: PIN login · Approvals modal · Audit log</small>
+<button class="row-action" onclick="go('audit')">Open audit log</button>
 </div>
-<div class="row"><div><b>Owner</b> <small class="mu">(PIN: 1234)</small></div><span class="ok">Full access (pricing, voids, adjustments, reports)</span></div>
-<div class="row"><div><b>Cashier 1</b> <small class="mu">(PIN: 1111) · Current user</small></div><span>Sell &amp; Till only</span></div>
-<div class="row"><div><b>Cashier 2</b> <small class="mu">(PIN: 2222)</small></div><span>Sell &amp; Till only</span></div>
+${state.users.map(user=>`<div class="row"><div><b>${user.name}</b>${user.id===active.id?` <span class="badge b-open">Signed in</span>`:""}</div><span>${user.role === "owner" ? "Owner · Full access" : `Cashier · Sell &amp; Till ${user.tillNumber}`}</span></div>`).join("")}
 </div>
 </div>`;
+}
+
+function loginView() {
+  return `<div class="login-shell"><section class="card login-card"><div class="login-brand"><div class="brand"><b>Cellar POS</b><span>Wines &amp; Spirits</span></div><span class="badge b-open">Staff sign-in</span></div><h1>Enter your PIN</h1><p class="mu">Sign in to open your point of sale and assigned till.</p><form onsubmit="event.preventDefault();submitPinLogin()"><label class="fl" for="login-pin">Staff PIN</label><input id="login-pin" type="password" inputmode="numeric" autocomplete="current-password" autofocus value="${esc(state.loginPin)}" placeholder="Enter PIN">${state.loginError?`<p class="login-error" role="alert">${esc(state.loginError)}</p>`:""}<button class="pri" type="submit">Sign in</button></form><div class="demo-hint"><b>Demo PINs</b><div><span>Owner</span><code>1234</code></div><div><span>Cashier 1 · Till 1</span><code>1111</code></div><div><span>Cashier 2 · Till 2</span><code>2222</code></div></div></section></div>`;
+}
+
+function ownerApprovalView() {
+  const approval = state.approval;
+  if (!approval) return "";
+  return `<div class="ov approval-overlay"><section class="mod approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-title"><div class="mh"><div><small>Owner approval required</small><h3 id="approval-title">${esc(approval.action)}</h3></div><button class="x" aria-label="Close" onclick="cancelOwnerApproval()">✕</button></div><div class="mb"><p>${esc(approval.details)}</p><div class="approval-requester">Requested by <b>${esc(approval.requestedBy)}</b></div><label class="fl" for="approval-pin">Owner PIN</label><input id="approval-pin" type="password" inputmode="numeric" autocomplete="current-password" value="${esc(state.approvalPin)}" oninput="state.approvalPin=this.value" onkeydown="if(event.key==='Enter')approveOwnerAction()" placeholder="Enter owner PIN">${state.approvalError?`<p class="login-error" role="alert">${esc(state.approvalError)}</p>`:""}</div><div class="ft"><button onclick="cancelOwnerApproval()">Cancel</button><button class="pri" onclick="approveOwnerAction()">Approve &amp; continue</button></div></section></div>`;
+}
+
+function localDateKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function setAuditFilter(field, value) {
+  const fields = { user: "auditFilterUser", action: "auditFilterAction", from: "auditFilterFrom", to: "auditFilterTo" };
+  if (!fields[field]) return false;
+  state[fields[field]] = value;
+  render();
+  return true;
+}
+function clearAuditFilters() {
+  state.auditFilterUser = "all";
+  state.auditFilterAction = "all";
+  state.auditFilterFrom = "";
+  state.auditFilterTo = "";
+  render();
+}
+function auditView() {
+  const users = [...new Set([...state.users.map(user => user.name), ...state.auditLog.map(entry => entry.user)])].sort();
+  const actions = [...new Set(state.auditLog.map(entry => entry.action))].sort();
+  const filtered = state.auditLog.slice().reverse().filter(entry => {
+    const date = localDateKey(entry.at);
+    return (state.auditFilterUser === "all" || entry.user === state.auditFilterUser) &&
+      (state.auditFilterAction === "all" || entry.action === state.auditFilterAction) &&
+      (!state.auditFilterFrom || date >= state.auditFilterFrom) &&
+      (!state.auditFilterTo || date <= state.auditFilterTo);
+  });
+  return `<div class="audit-screen"><section class="card"><div class="audit-heading"><div><h3>Audit log</h3><small class="mu">Sign-ins, sales and owner-approved actions</small></div><span class="badge b-open">${filtered.length} entries</span></div><div class="audit-filters"><label>User<select aria-label="Filter by user" onchange="setAuditFilter('user',this.value)"><option value="all">All users</option>${users.map(user=>`<option value="${esc(user)}" ${state.auditFilterUser===user?"selected":""}>${esc(user)}</option>`).join("")}</select></label><label>Action<select aria-label="Filter by action" onchange="setAuditFilter('action',this.value)"><option value="all">All actions</option>${actions.map(action=>`<option value="${esc(action)}" ${state.auditFilterAction===action?"selected":""}>${esc(action)}</option>`).join("")}</select></label><label>From<input aria-label="Filter from date" type="date" value="${esc(state.auditFilterFrom)}" onchange="setAuditFilter('from',this.value)"></label><label>To<input aria-label="Filter to date" type="date" value="${esc(state.auditFilterTo)}" onchange="setAuditFilter('to',this.value)"></label><button class="ghost" onclick="clearAuditFilters()">Clear filters</button></div><div class="audit-list">${filtered.map(entry=>`<article class="audit-entry"><div><b>${esc(entry.action)}</b><small>${new Date(entry.at).toLocaleString("en-KE")}</small></div><div><span>${esc(entry.details)}</span><small>By ${esc(entry.user)}</small></div></article>`).join("")||`<p class="mu audit-empty">No matching activity.</p>`}</div></section></div>`;
 }
 
 function settingsView() {
@@ -1835,6 +2070,7 @@ function renderScreen(v) {
     case "till": return tillView();
     case "reports": return dash();
     case "users": return usersView();
+    case "audit": return auditView();
     case "settings": return settingsView();
     default: return sell();
   }
@@ -1861,15 +2097,19 @@ function pay() {
 
 function rcpt() {
   const s = state.receipt;
-  const st = s.m == "cash" ? "Cash received" : s.pend ? "M-Pesa · pending reconciliation" : "M-Pesa confirmed";
-  return `<div class="ov"><div class="rw"><div class="rok">${IC.ok}<div><b>Sale complete</b><small>${st}</small></div></div><div class="paper"><div class="c"><b style="font-size:1rem">CELLAR &amp; CO.</b><br>WINES &amp; SPIRITS<br><span class="m">Demo shop · Nairobi · PIN P000000000X</span></div><hr><div class="r"><span>${s.no}</span><span>${s.at.toLocaleString("en-KE",{dateStyle:"short",timeStyle:"short"})}</span></div><div class="r m"><span>Cashier 1</span><span>Till 1</span></div><hr>${s.lines.map(l=>`<div><div class="r"><span>${l.n}</span><b>${(l.q*l.pr).toLocaleString()}</b></div><div class="m">${l.q} × ${l.pr.toLocaleString()} · ${l.s} · ${U[l.u]}</div></div>`).join("")}<hr><div class="r m"><span>Subtotal (excl. VAT)</span><span>${Math.round(s.t*100/116).toLocaleString()}</span></div><div class="r m"><span>VAT 16%</span><span>${Math.round(s.t*16/116).toLocaleString()}</span></div><div class="r tt"><span>TOTAL</span><span>${kes(s.t)}</span></div><div class="r m"><span>${s.m=="cash"?"Cash":"M-Pesa "+s.ref}</span><span>${s.m=="cash"?"Change "+(s.tend-s.t).toLocaleString():s.pend?"Pending":"Paid"}</span></div><hr><div class="qr">eTIMS QR</div><div class="c m">Thank you · Drink responsibly · 18+</div></div><div class="ft"><button onclick="toast('Sent to printer · drawer opened (demo)')">Print receipt</button><button class="pri" onclick="state.receipt=null;render()">New sale</button></div></div></div>`;
+  const st = s.voided ? "Voided · stock restored" : s.m == "cash" ? "Cash received" : s.pend ? "M-Pesa · pending reconciliation" : "M-Pesa confirmed";
+  return `<div class="ov"><div class="rw"><div class="rok">${IC.ok}<div><b>${s.voided?"Sale voided":"Sale complete"}</b><small>${st}</small></div></div><div class="paper"><div class="c"><b style="font-size:1rem">CELLAR &amp; CO.</b><br>WINES &amp; SPIRITS<br><span class="m">Demo shop · Nairobi · PIN P000000000X</span></div><hr><div class="r"><span>${s.no}</span><span>${s.at.toLocaleString("en-KE",{dateStyle:"short",timeStyle:"short"})}</span></div><div class="r m"><span>${esc(s.user||"Cashier 1")}</span><span>Till ${s.tillNumber||1}</span></div><hr>${s.lines.map(l=>`<div><div class="r"><span>${esc(l.n)}</span><b>${(l.q*l.pr).toLocaleString()}</b></div><div class="m">${l.q} × ${l.pr.toLocaleString()} · ${esc(l.s)} · ${U[l.u]}</div></div>`).join("")}<hr>${s.discountAmount?`<div class="r m"><span>Owner-approved discount (${s.discountPercent}%)</span><span>− ${kes(s.discountAmount)}</span></div>`:""}<div class="r m"><span>Subtotal (excl. VAT)</span><span>${Math.round(s.t*100/116).toLocaleString()}</span></div><div class="r m"><span>VAT 16%</span><span>${Math.round(s.t*16/116).toLocaleString()}</span></div><div class="r tt"><span>TOTAL</span><span>${kes(s.t)}</span></div><div class="r m"><span>${s.m=="cash"?"Cash":"M-Pesa "+s.ref}</span><span>${s.m=="cash"?"Change "+(s.tend-s.t).toLocaleString():s.pend?"Pending":"Paid"}</span></div>${s.voided?`<div class="sum bad"><span>VOIDED</span><b>${esc(s.voidedBy||"Owner")}</b></div>`:""}<hr><div class="qr">eTIMS QR</div><div class="c m">Thank you · Drink responsibly · 18+</div></div><div class="ft">${s.voided?"":`<button class="ghost" onclick="requestSaleVoid('${s.no}')">Void sale</button>`}<button onclick="toast('Sent to printer · drawer opened (demo)')">Print receipt</button><button class="pri" onclick="state.receipt=null;render()">New sale</button></div></div></div>`;
 }
 
 // Master Render Function
 function render() {
+  if (!state.currentUser) {
+    $("app").innerHTML = loginView();
+    return;
+  }
   if (!state.cart.length) state.cartOpen = false;
   const curScreen = SCREENS[state.view] || SCREENS.sell;
-  const screensList = Object.values(SCREENS);
+  const screensList = visibleScreens();
 
   $("app").innerHTML = `
 <div class="app-shell">
@@ -1891,8 +2131,8 @@ function render() {
     </nav>
     <div class="side-foot">
       <div class="side-user">
-        <b>${state.till.cashier}</b>
-        <small>Till ${state.till.tillNumber} · ${state.till.status === "open" ? `Float ${kes(state.till.float)}` : "Closed"}</small>
+        <b>${state.currentUser.name}</b>
+        <small>${state.currentUser.role === "owner" ? "Owner · Full access" : `Cashier · Till ${state.till.tillNumber}`} · ${state.till.status === "open" ? `Float ${kes(state.till.float)}` : "Closed"}</small>
       </div>
     </div>
   </aside>
@@ -1909,8 +2149,10 @@ function render() {
         ${curScreen.subtitle ? `<span>${curScreen.subtitle}</span>` : ""}
       </div>
       <div class="rt">
+        <span class="signed-in-user">${state.currentUser.name} · ${state.currentUser.role === "owner" ? "Owner" : `Till ${state.till.tillNumber}`}</span>
         <button class="pill ${state.offline ? "wn" : "ok"}" onclick="tOff()">● ${state.offline ? "Offline" : "Online"}</button>
         <button class="pill" onclick="tTheme()">Light / Dark</button>
+        <button class="pill" onclick="logout()">Sign out</button>
       </div>
     </header>
 
@@ -1922,7 +2164,7 @@ function render() {
   </div>
 
   <!-- Mobile Persistent Bottom Navigation -->
-  <nav class="bottom-nav" aria-label="Mobile Navigation">
+  <nav class="bottom-nav" aria-label="Mobile Navigation" style="grid-template-columns:repeat(${screensList.length},1fr)">
     ${screensList.map(s => `
       <button class="b-nav-btn ${state.view === s.id ? "on" : ""}" onclick="go('${s.id}')">
         ${NAV_ICONS[s.id] || ""}
@@ -1935,7 +2177,8 @@ ${state.payment ? pay() : ""}
 ${state.receipt ? rcpt() : ""}
 ${state.productEditor ? productEditorView() : ""}
 ${state.tillFlow ? tillFlowView() : ""}
-${state.shiftReceipt ? shiftRcpt() : ""}`;
+${state.shiftReceipt ? shiftRcpt() : ""}
+${state.approval ? ownerApprovalView() : ""}`;
 }
 
 render();

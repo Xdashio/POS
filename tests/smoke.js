@@ -57,6 +57,16 @@ function runSmokeTests() {
 
   const state = getVar("state");
   if (state.zeroStockPolicy !== "allow") throw new Error("Zero-stock policy should default to allow and flag");
+  const initialLoginHtml = domElements["app"]?.innerHTML || "";
+  if (state.currentUser !== null || !initialLoginHtml.includes("Demo PINs") || !initialLoginHtml.includes("1234") || !initialLoginHtml.includes("1111") || !initialLoginHtml.includes("2222")) {
+    throw new Error("PIN login screen or demo PIN hint is missing at startup");
+  }
+  if (callFn("loginWithPin", "9999") || !state.loginError) throw new Error("Invalid login PIN should be rejected with a visible error");
+  if (!callFn("loginWithPin", "1111") || state.currentUser.name !== "Cashier 1" || state.till.tillNumber !== 1) throw new Error("Cashier 1 PIN did not open their assigned till");
+  if (JSON.stringify(callFn("visibleScreens").map(screen => screen.id)) !== JSON.stringify(["sell", "till"])) throw new Error("Cashier navigation must be limited to Sell and their own Till");
+  if (callFn("go", "reports") || state.view !== "sell") throw new Error("Cashier navigation guard allowed access to Reports");
+  if (!callFn("loginWithPin", "1234") || state.currentUser.role !== "owner") throw new Error("Owner PIN did not sign in");
+  console.log("  ✓ Demo PIN login, invalid PIN rejection, cashier-only navigation, and Owner sign-in verified.");
 
   // 1. Central State & Seeded Movements Verification
   console.log("[1/10] Verifying Central State & Seeded Stock Movements...");
@@ -109,7 +119,7 @@ function runSmokeTests() {
 
   // 3. Router & Screen Renderers
   console.log("\n[3/10] Verifying Router & Every Screen Rendering...");
-  const allScreens = ["sell", "stock", "products", "till", "reports", "users", "settings"];
+  const allScreens = ["sell", "stock", "products", "till", "reports", "users", "audit", "settings"];
   for (const s of allScreens) {
     callFn("go", s);
     if (state.view !== s) throw new Error(`Router failed to navigate to "${s}"`);
@@ -629,6 +639,7 @@ function runSmokeTests() {
   if (!negativeHistory.includes("negative stock sale")) throw new Error("Flagged negative sale missing from Stock History");
   const reportsHtml = callFn("dash");
   if (!reportsHtml.includes("Negative stock") || !reportsHtml.includes(zeroProduct.n)) throw new Error("Negative stock item missing from Reports reorder list");
+  state.receipt = null;
   console.log("  ✓ Zero-stock sale is recorded, flagged in History, and shown on the Reports reorder list.");
 
   // Product price edits update checkout pricing and create a complete audit record.
@@ -641,7 +652,12 @@ function runSmokeTests() {
   callFn("updateProductDraft", "buyPrice", priceProduct.buyPrice + 10);
   callFn("updateProductDraft", "reorderLevel", 2);
   callFn("updateProductDraft", "preferredSupplier", state.suppliers[1]);
-  if (!callFn("saveProductEditor")) throw new Error("Failed to save product edits");
+  if (callFn("saveProductEditor")) throw new Error("Price override was saved without owner approval");
+  if (!state.approval || state.approval.action !== "Price override" || priceProduct.b !== oldPrice) throw new Error("Price override approval did not preserve the pending change");
+  state.approvalPin = "1111";
+  if (callFn("approveOwnerAction") || priceProduct.b !== oldPrice) throw new Error("Incorrect owner PIN approved a price override");
+  state.approvalPin = "1234";
+  if (!callFn("approveOwnerAction")) throw new Error("Correct owner PIN did not approve the price override");
   if (callFn("price", priceProduct, "b") !== newPrice) throw new Error("Product price edit did not update checkout price");
   if (priceProduct.reorderLevel !== 2 || priceProduct.preferredSupplier !== state.suppliers[1]) throw new Error("Product reorder level or preferred supplier was not saved");
   const priceLog = state.priceChanges[state.priceChanges.length - 1];
@@ -656,7 +672,44 @@ function runSmokeTests() {
   if (!callFn("saveProductEditor")) throw new Error("Failed to add product from editor");
   const addedProduct = state.products.find(p => p.n === "Smoke Test Soda");
   if (!addedProduct || state.products.length !== 18 || callFn("price", addedProduct, "b") !== 220) throw new Error("New product is missing or not priced for checkout");
-  console.log("  ✓ Product edits update checkout, retain reorder/supplier settings, log the price change, and add a checkout-ready SKU.");
+  callFn("setAuditFilter", "action", "Price override");
+  const filteredAudit = callFn("auditView");
+  if (!filteredAudit.includes("Tusker Lager") || !filteredAudit.includes("Filter by user") || !filteredAudit.includes("Filter from date")) throw new Error("Audit action, user, or date filters were not rendered correctly");
+  callFn("setAuditFilter", "user", "Owner");
+  if (!callFn("auditView").includes("Price override")) throw new Error("Audit log user filter did not retain the owner price action");
+  const today = callFn("localDateKey", new Date());
+  callFn("setAuditFilter", "from", today);
+  callFn("setAuditFilter", "to", today);
+  if (!callFn("auditView").includes("Price override")) throw new Error("Audit date range failed to include today's price override");
+  callFn("setAuditFilter", "from", "2099-01-01");
+  if (callFn("auditView").includes("Tusker Lager")) throw new Error("Audit date filter failed to exclude older entries");
+  callFn("clearAuditFilters");
+
+  // Discount and void both require a valid owner approval and are reflected in stock/audit.
+  state.cart = [];
+  callFn("add", priceProduct.id);
+  const undiscountedTotal = callFn("total");
+  callFn("requestCartDiscount");
+  if (state.approval?.action !== "Discount") throw new Error("Discount did not request owner approval");
+  state.approvalPin = "1234";
+  if (!callFn("approveOwnerAction") || state.cartDiscountPercent !== 10 || callFn("total") !== Math.round(undiscountedTotal * 0.9)) throw new Error("Owner-approved discount was not applied to checkout total");
+  const stockBeforeVoidedSale = callFn("getProductBaseUnits", priceProduct.id);
+  state.ageVerified = true;
+  callFn("charge");
+  if (!callFn("finish")) throw new Error("Could not complete discounted sale");
+  const discountedSale = state.receipt;
+  if (discountedSale.discountAmount !== undiscountedTotal - discountedSale.t) throw new Error("Receipt did not record the approved discount amount");
+  callFn("requestSaleVoid", discountedSale.no);
+  if (state.approval?.action !== "Void sale") throw new Error("Void did not request owner approval");
+  state.approvalPin = "2222";
+  if (callFn("approveOwnerAction")) throw new Error("Invalid PIN approved a void");
+  state.approvalPin = "1234";
+  if (!callFn("approveOwnerAction") || !discountedSale.voided) throw new Error("Owner-approved void did not mark the sale voided");
+  if (callFn("getProductBaseUnits", priceProduct.id) !== stockBeforeVoidedSale) throw new Error("Voiding a sale did not restore stock");
+  if (!callFn("auditView").includes("Void sale")) throw new Error("Approved void is missing from audit log");
+  state.receipt = null;
+  console.log("  ✓ Product price edits require owner approval; discounts and voids are approved, audited, and voids restore stock.");
+  console.log("  ✓ Audit log filters by user, action and date.");
 
   // Till open/close, reconciliation, sign-off, receipt, and closed-sale guard.
   console.log("\n[13/13] Verifying Till Opening, Shift Reconciliation & Closed Till Guard...");
