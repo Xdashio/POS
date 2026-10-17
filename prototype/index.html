@@ -368,7 +368,7 @@ const state = {
       t: a[6],
       baseUnit: tn > 0 ? "tot" : "bottle",
       baseUnitsPerBottle: tn > 0 ? tn : 1,
-      reorderLevel: 1,
+      reorderLevel: ["Captain Morgan", "Amarula"].includes(a[0]) ? 0.5 : 1,
       cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
     };
     Object.defineProperty(prod, "st", {
