@@ -56,6 +56,7 @@ function runSmokeTests() {
   }
 
   const state = getVar("state");
+  if (state.zeroStockPolicy !== "allow") throw new Error("Zero-stock policy should default to allow and flag");
 
   // 1. Central State & Seeded Movements Verification
   console.log("[1/10] Verifying Central State & Seeded Stock Movements...");
@@ -212,7 +213,8 @@ function runSmokeTests() {
   console.log(`  ✓ Selling 1 carton of JW Black (pack 6 × 25 tots) deducted exactly ${-expectedJwDelta} tots (${jwInitialBtl} btl -> ${jw.st} btl).`);
 
   // 6. Void or Negative Stock Being Blocked
-  console.log("\n[6/10] Verifying Void or Negative Stock Being Blocked...");
+  console.log("\n[6/10] Verifying configured zero-stock policy...");
+  state.zeroStockPolicy = "block";
 
   // A: recordStockMovement blocks negative stock
   const testMovBlocked = callFn("recordStockMovement", {
@@ -609,6 +611,25 @@ function runSmokeTests() {
   callFn("searchHistory", "");
   callFn("setHistoryFilter", "all");
   console.log("  ✓ Stock Overview and History search/filtering verified.");
+
+  // Smoke test the default allow-and-flag policy with a sale at zero stock.
+  console.log("\n[11/11] Verifying allow-and-flag negative stock policy...");
+  state.zeroStockPolicy = "allow";
+  const zeroProduct = state.products.find(p => p.id === 16);
+  const remaining = callFn("getProductBaseUnits", zeroProduct.id);
+  if (remaining > 0) callFn("recordStockMovement", { id: "mov_smoke_drain", productId: zeroProduct.id, type: "adjustment", qty: -remaining, unit: "b", unitQty: remaining, ref: "SMOKE-DRAIN", note: "Smoke test drain", user: "Test", at: new Date() });
+  state.cart = [];
+  callFn("add", zeroProduct.id);
+  state.ageVerified = true;
+  callFn("charge");
+  if (!callFn("finish")) throw new Error("Default allow policy rejected a sale at zero stock");
+  const negativeSale = state.stockMovements[state.stockMovements.length - 1];
+  if (!negativeSale.negativeStock || zeroProduct.st !== -1) throw new Error("Zero-stock sale was not flagged and recorded as negative");
+  const negativeHistory = callFn("renderHistoryTab");
+  if (!negativeHistory.includes("negative stock sale")) throw new Error("Flagged negative sale missing from Stock History");
+  const reportsHtml = callFn("dash");
+  if (!reportsHtml.includes("Negative stock") || !reportsHtml.includes(zeroProduct.n)) throw new Error("Negative stock item missing from Reports reorder list");
+  console.log("  ✓ Zero-stock sale is recorded, flagged in History, and shown on the Reports reorder list.");
 
   console.log("\n=========================================");
   console.log("🎉 ALL SMOKE TESTS PASSED SUCCESSFULLY! 🎉");

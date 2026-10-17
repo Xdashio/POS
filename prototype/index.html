@@ -28,7 +28,7 @@ small,.mu{color:var(--mu)}
 .brand b{font-size:1.15rem}.brand span{display:block;font-size:.8rem;color:var(--mu)}
 .rt{margin-left:auto;display:flex;gap:.5rem}.rt button{min-height:2.5rem}.ok{color:var(--ok)}.wn{color:var(--wn)}
 .bn{font-size:.85rem;color:var(--wn);background:var(--wns);border-radius:var(--rs);padding:.5rem .8rem}
-main{flex:1;min-height:0}
+main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh);padding:1rem;min-width:0}
 .card h4{margin:0;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
 
@@ -182,6 +182,21 @@ select:focus{outline:2px solid var(--act);outline-offset:1px}
 .tab-tbl th{padding:.55rem .4rem;color:var(--mu);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bd)}
 .tab-tbl td{padding:.6rem .4rem;border-bottom:1px solid var(--bd)}
 .tab-tbl tr:last-child td{border-bottom:0}
+.row-action{min-height:44px;padding:0 .65rem;font-size:.82rem}
+.big.low{font-size:1.55rem}
+.stock-dash{grid-template-columns:repeat(3,minmax(0,1fr))}
+.policy-options{display:flex;flex-wrap:wrap;gap:.9rem}.policy-options label{display:flex;align-items:center;gap:.4rem;min-height:44px}.policy-options input[type=radio]{width:1rem;min-height:1rem;accent-color:var(--ac)}
+@media (pointer:coarse){.stock-tabs button,.stock-filters button,.row-action{min-height:44px}}
+@media (max-width:999px){
+  .tab-tbl.stock-responsive,.tab-tbl.stock-responsive tbody{display:block;width:100%}.tab-tbl.stock-responsive thead{display:none}.tab-tbl.stock-responsive tbody{display:grid;gap:.7rem}
+  .tab-tbl.stock-responsive tr{display:grid;grid-template-columns:1fr 1fr;gap:.25rem .75rem;padding:.75rem;border:1px solid var(--bd);border-radius:var(--rm);background:var(--tile)}
+  .tab-tbl.stock-responsive td{display:flex;flex-direction:column;align-items:flex-start;text-align:left!important;padding:.25rem 0;border:0;min-width:0;overflow-wrap:anywhere;font-size:13px}
+  .tab-tbl.stock-responsive td:first-child,.tab-tbl.stock-responsive td:nth-child(2),.tab-tbl.stock-responsive td:last-child{grid-column:1/-1}
+  .tab-tbl.stock-responsive td:before{content:attr(data-label);font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);font-weight:700}
+  .stock-tabs button,.stock-filters button{min-height:44px}
+  .stock-dash{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){.stock-dash{grid-template-columns:1fr}.big.low{font-size:1.4rem}}
 </style></head>
 <body><div id="app"></div><div id="tt"></div>
 <script>
@@ -274,6 +289,7 @@ const state = {
   
   // Stock Management State (Prompt 1)
   stockTab: "overview", // "overview" | "receive" | "take" | "adjust" | "history"
+  zeroStockPolicy: "allow", // "allow" | "block"
   stockFilter: "all", // "all" | "low"
   stockSearch: "",
   historySearch: "",
@@ -352,6 +368,7 @@ const state = {
       t: a[6],
       baseUnit: tn > 0 ? "tot" : "bottle",
       baseUnitsPerBottle: tn > 0 ? tn : 1,
+      reorderLevel: 1,
       cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
     };
     Object.defineProperty(prod, "st", {
@@ -385,11 +402,24 @@ function getProductStock(productId) {
   return p.baseUnitsPerBottle > 1 ? baseUnits / p.baseUnitsPerBottle : baseUnits;
 }
 
-// Append a stock movement to the ledger, blocking any operation that causes negative stock
+function reorderThreshold(p) { return p.reorderLevel * p.k; }
+function isLowStock(p) { return p.st <= reorderThreshold(p); }
+function onHandLabel(p) {
+  const bottles = p.st, cartons = Math.floor(bottles / p.k);
+  const loose = Math.round((bottles - cartons * p.k) * 10) / 10;
+  const amount = `${cartons} ctn + ${fs(loose)} btl`;
+  return p.tn ? `${amount} (${fs(bottles * p.tn)} tots)` : amount;
+}
+function productCostPerBottle(p) {
+  const receipt = [...state.stockMovements].reverse().find(m => m.productId === p.id && m.type === "receipt" && m.buyingPrice);
+  return receipt ? receipt.buyingPrice / p.k : p.b * .65;
+}
+
+// Append a stock movement to the ledger while honoring the zero-stock sale policy
 function recordStockMovement(m) {
   m.qty = Math.round(m.qty);
   const currentBase = getProductBaseUnits(m.productId);
-  if (m.qty < 0 && (currentBase + m.qty) < 0) {
+  if (state.zeroStockPolicy === "block" && m.type === "sale" && m.qty < 0 && (currentBase + m.qty) < 0) {
     return false; // Block negative stock
   }
   state.stockMovements.push(m);
@@ -439,7 +469,7 @@ const IC = {
 const NAV_ICONS = {
   sell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
   stock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
-  products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3l2 2v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2V3z"/><path d="M7 13h10"/></svg>',
+  products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13l-7 7L3 10V3h7z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>',
   till: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="1"/></svg>',
   reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
@@ -449,7 +479,7 @@ const NAV_ICONS = {
 // Router Configuration
 const SCREENS = {
   sell: { id: "sell", label: "Sell", title: "Point of Sale", subtitle: "Till 1 · Active sale" },
-  stock: { id: "stock", label: "Stock", title: "Stock Management", subtitle: "Ledger-derived inventory" },
+  stock: { id: "stock", label: "Stock", title: "Stock Management", subtitle: "" },
   products: { id: "products", label: "Products", title: "Products & Pricing", subtitle: "Catalog & pack configurations" },
   till: { id: "till", label: "Till", title: "Till & Shifts", subtitle: "Cash & shift reconciliation" },
   reports: { id: "reports", label: "Reports", title: "Reports & Dashboard", subtitle: "Sales, velocity & shrinkage" },
@@ -489,7 +519,7 @@ function toast(m) {
 
 function add(id) {
   const p = state.products.find(x => x.id === id);
-  if (!p || getProductBaseUnits(id) <= 0) {
+  if (!p || (state.zeroStockPolicy === "block" && getProductBaseUnits(id) <= 0)) {
     toast("Item is out of stock");
     return false;
   }
@@ -497,7 +527,7 @@ function add(id) {
     .filter(x => x.id === id)
     .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
   const addBase = toBaseUnits(p, "b", 1);
-  if (currentInCartBase + addBase > getProductBaseUnits(id)) {
+  if (state.zeroStockPolicy === "block" && currentInCartBase + addBase > getProductBaseUnits(id)) {
     toast("Cannot add: exceeds available stock");
     return false;
   }
@@ -516,7 +546,7 @@ function qty(i, d) {
       .filter(x => x.id === l.id)
       .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
     const addBase = toBaseUnits(p, l.u, d);
-    if (currentInCartBase + addBase > getProductBaseUnits(l.id)) {
+    if (state.zeroStockPolicy === "block" && currentInCartBase + addBase > getProductBaseUnits(l.id)) {
       toast("Cannot add: exceeds available stock");
       return false;
     }
@@ -535,7 +565,7 @@ function unit(i, u) {
     .filter((x, idx) => idx !== i && x.id === l.id)
     .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
   const newBase = toBaseUnits(p, u, l.q);
-  if (otherLinesBase + newBase > getProductBaseUnits(l.id)) {
+  if (state.zeroStockPolicy === "block" && otherLinesBase + newBase > getProductBaseUnits(l.id)) {
     toast("Cannot switch unit: exceeds available stock");
     return false;
   }
@@ -613,7 +643,7 @@ function finish() {
     const currentCartBase = state.cart
       .filter(x => x.id === l.id)
       .reduce((sum, x) => sum + toBaseUnits(p, x.u, x.q), 0);
-    if (currentCartBase > getProductBaseUnits(p.id)) {
+    if (state.zeroStockPolicy === "block" && currentCartBase > getProductBaseUnits(p.id)) {
       toast("Sale blocked: exceeds available stock for " + p.n);
       return false;
     }
@@ -642,10 +672,11 @@ function finish() {
       productId: p.id,
       type: "sale",
       qty: -baseDelta,
+      negativeStock: getProductBaseUnits(p.id) - baseDelta < 0,
       unit: l.u,
       unitQty: l.q,
       ref: s.no,
-      note: `Sale ${s.no} (${l.q} ${U[l.u]})`,
+      note: `Sale ${s.no} (${l.q} ${U[l.u]})${getProductBaseUnits(p.id) - baseDelta < 0 ? " · NEGATIVE STOCK" : ""}`,
       user: state.till.cashier,
       at: new Date()
     });
@@ -679,7 +710,7 @@ function sell() {
 <div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.length} transactions</small></div></div>
 <section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
 <div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
-<div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${p.st<=5?"low":""}">${p.st<=0?"Out of stock":p.st<=5?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
+<div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0&&state.zeroStockPolicy==="block"?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${isLowStock(p)?"low":""}">${p.st<=0?"Out of stock":isLowStock(p)?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
 <aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
 <div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div><div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
 <div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified?"":"disabled"} onclick="charge()">${state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
@@ -694,14 +725,14 @@ function dash() {
   state.sales.forEach(s => s.lines.forEach(l => top[l.n] = (top[l.n] || 0) + l.q));
   const tp = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const mx = tp[0][1];
-  const lo = state.products.filter(p => p.st <= 5);
+  const lo = state.products.filter(isLowStock);
 
   return `<div class="dash">
 <div class="card s2"><h4>Sales today</h4><div class="big" style="font-size:34px">${kes(base.tot+sum)}</div><small>Cash ${kes(cash)} · M-Pesa ${kes(mp)}</small></div>
 <div class="card"><h4>Transactions</h4><div class="big">${base.n+state.sales.length}</div><small>Avg ${kes((base.tot+sum)/(base.n+state.sales.length))}</small></div>
 <div class="card"><h4>M-Pesa to reconcile</h4><div class="big ${pend?"low":""}">${pend}</div><small>Entered manually while offline</small></div>
 <div class="card s2"><h4>Top sellers</h4>${tp.map(([n,q])=>`<div style="margin-top:8px"><div class="row" style="border:0;padding:0"><span>${n}</span><b>${q}</b></div><div class="bar"><i style="width:${q/mx*100}%"></i></div></div>`).join("")}</div>
-<div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small></span><span><b class="low">${fs(p.st)} left</b> · order ${p.k}</b></span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
+<div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small>${p.st < 0 ? ' <span class="badge b-adj">Negative stock</span>' : ''}</span><span><b class="low">${onHandLabel(p)} left</b> · order ${p.reorderLevel} ctn</span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
 <div class="card s2"><h4>Till reconciliation · yesterday</h4><div class="row"><span>Expected cash</span><b>${kes(18900)}</b></div><div class="row"><span>Counted cash</span><b>${kes(18750)}</b></div><div class="row"><span>Variance</span><b class="low">− ${kes(150)}</b></div></div>
 <div class="card s2"><h4>Voids &amp; discounts</h4><div class="row"><span>Void · Tusker ×2 · Cashier 1</span><small>14:05</small></div><div class="row"><span>10% off · JW Black · owner approved</span><small>12:40</small></div><div class="row"><span>Price override · Chrome Vodka</span><small>09:15</small></div></div></div>`;
 }
@@ -945,39 +976,38 @@ function submitAdjustment() {
 function renderStockOverviewTab(lo, totalBaseUnits, totalRetailVal) {
   const q = state.stockSearch.toLowerCase().trim();
   const filtered = state.products.filter(p => {
-    const matchesFilter = state.stockFilter === "all" || p.st <= 5;
+    const matchesFilter = state.stockFilter === "all" || isLowStock(p);
     const matchesQuery = !q || (p.n + p.s + p.g).toLowerCase().includes(q);
     return matchesFilter && matchesQuery;
   });
 
   return `
-  <div class="dash">
+  <div class="dash stock-dash">
     <div class="card"><h4>Total SKUs</h4><div class="big">${state.products.length}</div><small>Active retail items</small></div>
-    <div class="card"><h4>Stock valuation</h4><div class="big">${kes(totalRetailVal)}</div><small>Current retail value</small></div>
-    <div class="card"><h4>Low stock items</h4><div class="big ${lo.length ? "low" : ""}">${lo.length}</div><small>${lo.length ? "Reorder needed" : "All levels healthy"}</small></div>
-    <div class="card"><h4>Total base units</h4><div class="big">${totalBaseUnits.toLocaleString()}</div><small>Derived tots &amp; bottles</small></div>
+    <div class="card"><h4>Stock value at cost</h4><div class="big">${kes(state.products.reduce((sum,p)=>sum+p.st*productCostPerBottle(p),0))}</div><small>Retail value · ${kes(totalRetailVal)}</small></div>
+    <div class="card"><h4>Low stock</h4><div class="big ${lo.length ? "low" : ""}">${lo.length}</div><small>${lo.length ? "Reorder needed" : "All levels healthy"}</small></div>
 
     <div class="card s2" style="grid-column:1/-1">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem">
         <div style="display:flex;gap:.5rem;align-items:center;flex:1;min-width:14rem">
           <input id="stk-search" placeholder="Search inventory by name, category, or size…" value="${state.stockSearch}" oninput="searchStock(this.value)">
         </div>
-        <div class="chips" style="margin:0">
+        <div class="chips stock-filters" style="margin:0">
           <button class="${state.stockFilter === "all" ? "on" : ""}" onclick="setStockFilter('all')">All products (${state.products.length})</button>
           <button class="${state.stockFilter === "low" ? "on" : ""}" onclick="setStockFilter('low')">Low stock only (${lo.length})</button>
         </div>
       </div>
 
       <div style="overflow-x:auto">
-        <table class="tab-tbl">
+        <table class="tab-tbl stock-responsive">
           <thead>
             <tr>
               <th>Product</th>
               <th>Category</th>
               <th>Pack / Tot</th>
               <th style="text-align:right">Retail (Btl)</th>
-              <th style="text-align:right">Base units</th>
-              <th style="text-align:right">Derived stock</th>
+              <th style="text-align:right">Counted in</th>
+              <th style="text-align:right">On hand</th>
               <th style="text-align:center">Status</th>
               <th style="text-align:right">Quick actions</th>
             </tr>
@@ -985,15 +1015,15 @@ function renderStockOverviewTab(lo, totalBaseUnits, totalRetailVal) {
           <tbody>
             ${filtered.map(p => `
               <tr>
-                <td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
-                <td>${p.g}</td>
-                <td>${p.k} btl/ctn${p.tn ? ` · ${p.tn} tots` : ""}</td>
-                <td style="text-align:right"><b>${kes(p.b)}</b></td>
-                <td style="text-align:right">${getProductBaseUnits(p.id)} ${p.tn ? "tots" : "btl"}</td>
-                <td style="text-align:right"><b class="${p.st <= 5 ? "low" : ""}">${fs(p.st)}</b> btl</td>
+                <td data-label="Product"><b>${p.n}</b> <small class="mu">${p.s}</small></td>
+                <td data-label="Category">${p.g}</td>
+                <td data-label="Pack / Tot">${p.k} btl/ctn${p.tn ? ` · ${p.tn} tots` : ""}</td>
+                <td data-label="Retail (Btl)" style="text-align:right"><b>${kes(p.b)}</b></td>
+                <td data-label="Counted in" style="text-align:right">${getProductBaseUnits(p.id)} ${p.tn ? "tots" : "btl"}</td>
+                <td data-label="On hand" style="text-align:right"><b class="${isLowStock(p) ? "low" : ""}">${onHandLabel(p)}</b></td>
                 <td style="text-align:center">
-                  <span class="badge ${p.st <= 0 ? "low" : p.st <= 5 ? "b-adj" : "b-rec"}">
-                    ${p.st <= 0 ? "Out of stock" : p.st <= 5 ? "Low stock" : "Healthy"}
+                  <span class="badge ${p.st <= 0 ? "low" : isLowStock(p) ? "b-adj" : "b-rec"}">
+                    ${p.st <= 0 ? "Out of stock" : isLowStock(p) ? "Low stock" : "Healthy"}
                   </span>
                 </td>
                 <td style="text-align:right">
@@ -1022,7 +1052,7 @@ function renderReceiveTab() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
         <div>
           <h4>Receive Goods (Purchase Inward)</h4>
-          <small class="mu">Creates append-only receipt movements that raise derived stock levels</small>
+          <small class="mu">Creates receipt movements that increase on-hand stock</small>
         </div>
         <span class="badge b-rec">Goods Inward</span>
       </div>
@@ -1228,7 +1258,7 @@ function renderAdjustmentsTab() {
             ${state.products.map(prod => `<option value="${prod.id}" ${prod.id === d.productId ? "selected" : ""}>${prod.n} (${prod.s} · Current stock: ${fs(prod.st)} btl)</option>`).join("")}
           </select>
           <small class="mu" style="margin-top:.25rem;display:block">
-            Current stock: <b>${fs(p.st)}</b> bottles (${availBase} base units in ledger)
+            Current stock: <b>${fs(p.st)}</b> bottles (${availBase} counted in ledger)
           </small>
         </div>
 
@@ -1253,7 +1283,7 @@ function renderAdjustmentsTab() {
         <div>
           <label class="fl">Quantity to Adjust</label>
           <input type="number" min="1" step="1" value="${d.qty}" oninput="updateAdjustmentDraft('qty', +this.value)">
-          ${exceeds ? `<small class="low" style="margin-top:.25rem;display:block">Blocked: quantity exceeds available stock (${availBase} base units)</small>` : ""}
+          ${exceeds ? `<small class="low" style="margin-top:.25rem;display:block">Blocked: quantity exceeds available stock (${availBase} counted in ledger)</small>` : ""}
         </div>
 
         <div>
@@ -1309,7 +1339,7 @@ function renderHistoryTab() {
       <div style="flex:1;min-width:14rem">
         <input id="hist-search" placeholder="Search movements by product, ref, user, or note…" value="${state.historySearch}" oninput="searchHistory(this.value)">
       </div>
-      <div class="chips" style="margin:0">
+      <div class="chips stock-filters" style="margin:0">
         <button class="${fType === "all" ? "on" : ""}" onclick="setHistoryFilter('all')">All</button>
         <button class="${fType === "receipt" ? "on" : ""}" onclick="setHistoryFilter('receipt')">Receipts</button>
         <button class="${fType === "sale" ? "on" : ""}" onclick="setHistoryFilter('sale')">Sales</button>
@@ -1320,14 +1350,14 @@ function renderHistoryTab() {
     </div>
 
     <div style="overflow-x:auto">
-      <table class="tab-tbl">
+      <table class="tab-tbl stock-responsive">
         <thead>
           <tr>
             <th>Time</th>
             <th>Product</th>
             <th>Type</th>
             <th style="text-align:right">Quantity</th>
-            <th style="text-align:right">Base units delta</th>
+            <th style="text-align:right">Counted in delta</th>
             <th>Ref / Note</th>
             <th>User</th>
           </tr>
@@ -1346,22 +1376,22 @@ function renderHistoryTab() {
 
             return `
             <tr>
-              <td style="white-space:nowrap;font-size:.82rem;color:var(--mu)">
+              <td data-label="Time" style="white-space:nowrap;font-size:.82rem;color:var(--mu)">
                 ${new Date(m.at).toLocaleDateString("en-KE", { day: "2-digit", month: "short" })} ${new Date(m.at).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
               </td>
-              <td><b>${p ? p.n : "Product #" + m.productId}</b> <small class="mu">${p ? p.s : ""}</small></td>
-              <td><span class="badge ${badgeClass}">${m.type}</span></td>
-              <td style="text-align:right">
+              <td data-label="Product"><b>${p ? p.n : "Product #" + m.productId}</b> <small class="mu">${p ? p.s : ""}</small></td>
+              <td data-label="Type"><span class="badge ${badgeClass}">${m.negativeStock ? "negative stock sale" : m.type}</span></td>
+              <td data-label="Quantity" style="text-align:right">
                 <b class="${isLoss ? "low" : "ok"}">${deltaSign}${m.unitQty} ${U[m.unit] || m.unit}</b>
               </td>
-              <td style="text-align:right">
+              <td data-label="Counted in" style="text-align:right">
                 <span class="${isLoss ? "low" : "ok"}">${deltaSign}${m.qty} ${p && p.tn ? "tots" : "btl"}</span>
               </td>
-              <td>
+              <td data-label="Ref / Note">
                 <div><b>${m.ref || "—"}</b>${m.reason ? ` <span class="badge b-adj" style="font-size:.7rem;padding:0 .35rem;vertical-align:middle">${m.reason}</span>` : ""}</div>
                 <small class="mu">${m.note || ""}</small>
               </td>
-              <td><small>${m.user || "System"}</small></td>
+              <td data-label="User"><small>${m.user || "System"}</small></td>
             </tr>`;
           }).join("") || `<tr><td colspan="7" class="mu" style="text-align:center;padding:2rem">No stock movements found.</td></tr>`}
         </tbody>
@@ -1371,7 +1401,7 @@ function renderHistoryTab() {
 }
 
 function stockView() {
-  const lo = state.products.filter(p => p.st <= 5);
+  const lo = state.products.filter(isLowStock);
   const totalBaseUnits = state.products.reduce((sum, p) => sum + getProductBaseUnits(p.id), 0);
   const totalRetailVal = state.products.reduce((sum, p) => sum + Math.round(p.st * p.b), 0);
 
@@ -1383,7 +1413,7 @@ function stockView() {
         <span class="badge" style="background:var(--acs);color:var(--act)">Owner Screen</span>
         <small class="mu">Inventory control · Goods inward · Stock audit · Adjustments</small>
       </div>
-      <div class="chips" style="margin:0">
+      <div class="chips stock-tabs" style="margin:0">
         <button class="${state.stockTab === "overview" ? "on" : ""}" onclick="setStockTab('overview')">Overview</button>
         <button class="${state.stockTab === "receive" ? "on" : ""}" onclick="setStockTab('receive')">Receive Goods</button>
         <button class="${state.stockTab === "take" ? "on" : ""}" onclick="setStockTab('take')">Stock Take</button>
@@ -1497,6 +1527,7 @@ function settingsView() {
 <div class="row"><span>Age check (18+)</span><b class="ok">Mandatory before charging</b></div>
 <div class="row"><span>Receipt layout</span><b>80mm thermal paper with serrated edge</b></div>
 <div class="row"><span>Offline operation</span><b class="ok">PWA offline-first enabled</b></div>
+<div class="row"><span>When stock is zero</span><div class="policy-options"><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy === "block" ? "checked" : ""} onchange="state.zeroStockPolicy='block';render()"> Block sale</label><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy === "allow" ? "checked" : ""} onchange="state.zeroStockPolicy='allow';render()"> Allow and flag as negative stock</label></div></div>
 </div>
 </div>`;
 }
@@ -1580,7 +1611,7 @@ function render() {
       </div>
       <div class="desktop-title">
         <b>${curScreen.title}</b>
-        <span>${curScreen.subtitle}</span>
+        ${curScreen.subtitle ? `<span>${curScreen.subtitle}</span>` : ""}
       </div>
       <div class="rt">
         <button class="pill ${state.offline ? "wn" : "ok"}" onclick="tOff()">● ${state.offline ? "Offline" : "Online"}</button>
