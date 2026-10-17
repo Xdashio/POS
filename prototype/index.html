@@ -156,7 +156,9 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .paper::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px;background:linear-gradient(135deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px,linear-gradient(225deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px}
 .paper .c{text-align:center}.paper hr{border:0;border-top:1px dashed #b9b4aa;margin:.2rem 0;width:100%}.paper .r{display:flex;justify-content:space-between;gap:.6rem}
 .paper .m{color:#6c6872;font-size:.75rem}.paper .tt{font-size:1.2rem;font-weight:700}.paper .qr{border-color:#b9b4aa;color:#6c6872}
+.till-modal{width:min(42rem,100%)}.denom-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem}.denom{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600;color:var(--mu)}.denom input{min-height:2.75rem;padding:0 .5rem;text-align:center}.shift-expect{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.shift-expect>div{display:flex;flex-direction:column;gap:.25rem;padding:.8rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm)}.shift-expect span{color:var(--mu);font-size:.8rem}.shift-expect b{font-size:1.1rem}
 @media (max-width:640px){.mod{width:100%;border-radius:var(--rl) var(--rl) 0 0}.rw{padding:1rem}}
+@media (max-width:640px){.denom-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.till-modal .mb{max-height:65vh}.denom input{min-height:2.75rem}}
 h3,.big,.brand b,.pt b{letter-spacing:-.02em}
 button{font-weight:600}.card h4,.fl{font-weight:700;letter-spacing:.09em}
 @media (min-width:1000px){.sell,.tiles,.cart,.prod{gap:1.25rem}.card{padding:1.5rem}.dash{gap:1.25rem}}
@@ -341,8 +343,15 @@ const state = {
     status: "open",
     float: 5000,
     cashier: "Cashier 1",
-    tillNumber: 1
+    tillNumber: 1,
+    openingFloat: 5000,
+    openedAt: new Date(),
+    salesStartIndex: 0
   },
+  shiftHistory: [],
+  tillFlow: null,
+  tillDraft: null,
+  shiftReceipt: null,
   
   // Baseline historical metrics
   baseMetrics: {
@@ -451,6 +460,7 @@ const $ = id => document.getElementById(id);
 const price = (p, u) => u == "b" ? p.b : u == "c" ? p.cp : p.t;
 const fac = (p, u) => u == "b" ? 1 : u == "c" ? p.k : (p.tn ? 1 / p.tn : 1);
 const kes = n => "KES " + Math.round(n).toLocaleString("en-KE");
+const esc = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 const fs = n => Number.isInteger(n) ? n : n.toFixed(1);
 const total = () => state.cart.reduce((a, l) => {
   const p = state.products.find(x => x.id === l.id);
@@ -624,9 +634,151 @@ function list() {
   return state.products.filter(p => (state.selectedCategory == "All" || p.g == state.selectedCategory) && (p.n + p.s).toLowerCase().includes(q));
 }
 
+const CASH_DENOMINATIONS = [1000, 500, 200, 100, 50, 40, 20, 10, 5, 1];
+function activeShiftSales() {
+  return state.sales.slice(state.till.salesStartIndex || 0);
+}
+function shiftExpectedCash() {
+  return state.till.openingFloat + activeShiftSales().filter(s => s.m === "cash").reduce((sum, s) => sum + s.t, 0);
+}
+function shiftExpectedMpesa() {
+  return activeShiftSales().filter(s => s.m === "mpesa").reduce((sum, s) => sum + s.t, 0);
+}
+function beginTillOpen() {
+  if (state.till.status === "open") return false;
+  state.tillFlow = "open";
+  state.tillDraft = { float: state.till.float || 0 };
+  render();
+  return true;
+}
+function beginTillClose() {
+  if (state.till.status !== "open") return false;
+  if (state.payment) {
+    toast("Finish or cancel the payment before closing the till");
+    return false;
+  }
+  state.tillFlow = "close";
+  state.tillDraft = {
+    denominations: Object.fromEntries(CASH_DENOMINATIONS.map(value => [value, 0])),
+    mpesaReceived: "",
+    reason: "",
+    ownerPin: ""
+  };
+  render();
+  return true;
+}
+function updateTillDraft(field, value) {
+  if (!state.tillDraft) return;
+  state.tillDraft[field] = value;
+  updateTillCloseTotals();
+}
+function updateTillDenomination(value, count) {
+  if (!state.tillDraft || !state.tillDraft.denominations) return;
+  state.tillDraft.denominations[value] = count;
+  updateTillCloseTotals();
+}
+function tillCloseTotals() {
+  const draft = state.tillDraft || {};
+  const cashCounted = Object.entries(draft.denominations || {}).reduce((sum, [value, count]) => sum + Number(value) * Number(count || 0), 0);
+  const cashExpected = shiftExpectedCash();
+  const mpesaExpected = shiftExpectedMpesa();
+  const mpesaReceived = Number(draft.mpesaReceived || 0);
+  const cashVariance = cashCounted - cashExpected;
+  const mpesaVariance = mpesaReceived - mpesaExpected;
+  return { cashCounted, cashExpected, cashVariance, mpesaExpected, mpesaReceived, mpesaVariance, totalVariance: cashVariance + mpesaVariance };
+}
+function updateTillCloseTotals() {
+  if (state.tillFlow !== "close") return;
+  const totals = tillCloseTotals();
+  const values = {
+    "counted-cash": kes(totals.cashCounted),
+    "cash-variance": kes(totals.cashVariance),
+    "mpesa-variance": kes(totals.mpesaVariance),
+    "total-variance": kes(totals.totalVariance)
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const element = $(id);
+    if (element) element.textContent = value;
+  });
+}
+function cancelTillFlow() {
+  state.tillFlow = null;
+  state.tillDraft = null;
+  render();
+}
+function submitTillOpen() {
+  const openingFloat = Number(state.tillDraft?.float);
+  if (!Number.isFinite(openingFloat) || openingFloat < 0) {
+    toast("Enter a valid opening float");
+    return false;
+  }
+  state.till.status = "open";
+  state.till.float = Math.round(openingFloat);
+  state.till.openingFloat = Math.round(openingFloat);
+  state.till.openedAt = new Date();
+  state.till.salesStartIndex = state.sales.length;
+  state.tillFlow = null;
+  state.tillDraft = null;
+  render();
+  return true;
+}
+function submitTillClose() {
+  if (state.till.status !== "open" || !state.tillDraft) return false;
+  for (const [denomination, count] of Object.entries(state.tillDraft.denominations)) {
+    if (!Number.isInteger(Number(count)) || Number(count) < 0) {
+      toast(`Enter a whole, non-negative count for KES ${denomination}`);
+      return false;
+    }
+  }
+  if (state.tillDraft.mpesaReceived === "" || !Number.isFinite(Number(state.tillDraft.mpesaReceived)) || Number(state.tillDraft.mpesaReceived) < 0) {
+    toast("Enter the M-Pesa amount received");
+    return false;
+  }
+  const totals = tillCloseTotals();
+  const hasVariance = totals.cashVariance !== 0 || totals.mpesaVariance !== 0;
+  if (hasVariance && !state.tillDraft.reason.trim()) {
+    toast("Add a reason for the cash or M-Pesa variance");
+    return false;
+  }
+  if (state.tillDraft.ownerPin !== "1234") {
+    toast("Owner sign-off requires the correct PIN");
+    return false;
+  }
+  const closedAt = new Date();
+  const summary = {
+    id: `SHIFT-${String(state.shiftHistory.length + 1).padStart(4, "0")}`,
+    tillNumber: state.till.tillNumber,
+    cashier: state.till.cashier,
+    owner: "Owner",
+    openedAt: state.till.openedAt,
+    closedAt,
+    openingFloat: state.till.openingFloat,
+    transactionCount: activeShiftSales().length,
+    cashSales: totals.cashExpected - state.till.openingFloat,
+    denominations: { ...state.tillDraft.denominations },
+    ...totals,
+    reason: state.tillDraft.reason.trim(),
+    signedOffBy: "Owner",
+    ownerSignedOff: true
+  };
+  state.shiftHistory.push(summary);
+  state.till.status = "closed";
+  state.till.closedAt = closedAt;
+  state.shiftReceipt = summary;
+  state.tillFlow = null;
+  state.tillDraft = null;
+  render();
+  return true;
+}
+
 function charge() {
+  if (state.till.status !== "open") {
+    toast("Sale blocked: open the till before charging");
+    return false;
+  }
   state.payment = { m: "cash", tend: total(), phone: "0712 345 678", ref: "", st: "idle" };
   render();
+  return true;
 }
 
 function stk() {
@@ -642,6 +794,12 @@ function stk() {
 }
 
 function finish() {
+  if (state.till.status !== "open") {
+    state.payment = null;
+    toast("Sale blocked: open the till before charging");
+    render();
+    return false;
+  }
   const t = total();
   const d = state.payment;
 
@@ -711,17 +869,18 @@ function sell() {
   const open = state.cartOpen && state.cart.length;
   const n = state.cart.reduce((a, l) => a + l.q, 0);
   const sum = state.sales.reduce((a, s) => a + s.t, 0);
+  const tillOpen = state.till.status === "open";
 
   return `<div class="sell"><div class="tiles">
 <div class="card t"><h4>Age verified (18+)</h4><div style="display:flex;align-items:center;justify-content:space-between"><span class="${state.ageVerified?"":"low"}">${state.ageVerified?"ID checked":"Required to charge"}</span><button class="sw ${state.ageVerified?"on":""}" aria-label="Age verified" onclick="state.ageVerified=!state.ageVerified;render()"><i></i></button></div></div>
-<div class="card t"><h4>Till</h4><div class="big">Open</div><small>Float ${kes(state.till.float)} · ${state.till.cashier}</small></div>
+<div class="card t"><h4>Till</h4><div class="big ${tillOpen?"ok":"low"}">${tillOpen?"Open":"Closed"}</div><small>${tillOpen?`Float ${kes(state.till.float)} · ${state.till.cashier}`:"Open the till before charging"}</small></div>
 <div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.length} transactions</small></div></div>
 <section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
 <div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
 <div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0&&state.zeroStockPolicy==="block"?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${isLowStock(p)?"low":""}">${p.st<=0?"Out of stock":isLowStock(p)?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
 <aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
 <div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div><div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
-<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified?"":"disabled"} onclick="charge()">${state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
+<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="state.cart=[];render()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified&&tillOpen?"":"disabled"} onclick="charge()">${!tillOpen?"Till closed":state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
 }
 
 function dash() {
@@ -734,6 +893,7 @@ function dash() {
   const tp = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const mx = tp[0][1];
   const lo = state.products.filter(isLowStock);
+  const lastShift = state.shiftHistory[state.shiftHistory.length - 1];
 
   return `<div class="dash">
 <div class="card s2"><h4>Sales today</h4><div class="big" style="font-size:34px">${kes(base.tot+sum)}</div><small>Cash ${kes(cash)} · M-Pesa ${kes(mp)}</small></div>
@@ -741,7 +901,7 @@ function dash() {
 <div class="card"><h4>M-Pesa to reconcile</h4><div class="big ${pend?"low":""}">${pend}</div><small>Entered manually while offline</small></div>
 <div class="card s2"><h4>Top sellers</h4>${tp.map(([n,q])=>`<div style="margin-top:8px"><div class="row" style="border:0;padding:0"><span>${n}</span><b>${q}</b></div><div class="bar"><i style="width:${q/mx*100}%"></i></div></div>`).join("")}</div>
 <div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small>${p.st < 0 ? ' <span class="badge b-adj">Negative stock</span>' : ''}</span><span><b class="low">${onHandLabel(p)} left</b> · order ${p.reorderLevel} ctn</span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
-<div class="card s2"><h4>Till reconciliation · yesterday</h4><div class="row"><span>Expected cash</span><b>${kes(18900)}</b></div><div class="row"><span>Counted cash</span><b>${kes(18750)}</b></div><div class="row"><span>Variance</span><b class="low">− ${kes(150)}</b></div></div>
+<div class="card s2"><h4>${lastShift?`Latest shift variance · ${lastShift.id}`:"Till variance"}</h4>${lastShift?`<div class="big ${lastShift.totalVariance===0?"ok":"low"}">${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)}</div><div class="row"><span>Cash · expected ${kes(lastShift.cashExpected)}, counted ${kes(lastShift.cashCounted)}</span><b>${lastShift.cashVariance>0?"+":""}${kes(lastShift.cashVariance)}</b></div><div class="row"><span>M-Pesa · expected ${kes(lastShift.mpesaExpected)}, received ${kes(lastShift.mpesaReceived)}</span><b>${lastShift.mpesaVariance>0?"+":""}${kes(lastShift.mpesaVariance)}</b></div><small>${lastShift.reason?`Reason: ${esc(lastShift.reason)} · `:""}Signed off by ${lastShift.signedOffBy} · ${lastShift.closedAt.toLocaleString("en-KE")}</small>`:`<p class="mu">No closed shift yet. Close a till to record its cash and M-Pesa variance.</p>`}</div>
 <div class="card s2"><h4>Voids &amp; discounts</h4><div class="row"><span>Void · Tusker ×2 · Cashier 1</span><small>14:05</small></div><div class="row"><span>10% off · JW Black · owner approved</span><small>12:40</small></div><div class="row"><span>Price override · Chrome Vodka</span><small>09:15</small></div></div></div>`;
 }
 
@@ -1580,28 +1740,50 @@ ${state.priceChanges.length ? state.priceChanges.slice().reverse().slice(0,5).ma
 }
 
 function tillView() {
-  const sum = state.sales.reduce((a, s) => a + s.t, 0);
-  const cash = base.cash + state.sales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
-  const mp = base.mp + state.sales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
+  const open = state.till.status === "open";
+  const currentSales = open ? activeShiftSales() : [];
+  const cash = currentSales.filter(s => s.m === "cash").reduce((sum, s) => sum + s.t, 0);
+  const mp = currentSales.filter(s => s.m === "mpesa").reduce((sum, s) => sum + s.t, 0);
+  const expectedCash = open ? shiftExpectedCash() : null;
+  const lastShift = state.shiftHistory[state.shiftHistory.length - 1];
 
   return `<div class="dash">
-<div class="card"><h4>Till status</h4><div class="big ok">Open</div><small>Till #1 · ${state.till.cashier}</small></div>
-<div class="card"><h4>Float balance</h4><div class="big">${kes(state.till.float)}</div><small>Opening float</small></div>
-<div class="card"><h4>Cash collected</h4><div class="big">${kes(cash)}</div><small>In cash drawer</small></div>
-<div class="card"><h4>M-Pesa collected</h4><div class="big">${kes(mp)}</div><small>Daraja till</small></div>
+<div class="card"><h4>Till status</h4><div class="big ${open?"ok":"low"}">${open?"Open":"Closed"}</div><small>Till #${state.till.tillNumber} · ${state.till.cashier}</small></div>
+<div class="card"><h4>Opening float</h4><div class="big">${kes(open?state.till.openingFloat:state.till.float)}</div><small>${open?`Opened ${state.till.openedAt.toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}`:"Last recorded float"}</small></div>
+<div class="card"><h4>Cash sales</h4><div class="big">${kes(cash)}</div><small>Current shift</small></div>
+<div class="card"><h4>M-Pesa sales</h4><div class="big">${kes(mp)}</div><small>Current shift · includes offline entries</small></div>
 
 <div class="card s2" style="grid-column:1/-1">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
 <h4>Shift details &amp; drawer controls</h4>
-<small class="mu">Prompt 3: Open/close till flows · Denomination count</small>
+${open?`<button class="row-action" onclick="beginTillClose()">Close till</button>`:`<button class="row-action" onclick="beginTillOpen()">Open till</button>`}
 </div>
 <div class="row"><span>Active cashier</span><b>${state.till.cashier}</b></div>
-<div class="row"><span>Till station</span><b>Till 1 (Single outlet)</b></div>
-<div class="row"><span>Expected cash in drawer</span><b>${kes(state.till.float + cash)}</b></div>
-<div class="row"><span>Total transactions today</span><b>${base.n + state.sales.length}</b></div>
-<div class="row"><span>Shift status</span><b class="ok">Active shift · Normal operation</b></div>
+<div class="row"><span>Till station</span><b>Till ${state.till.tillNumber} (Single outlet)</b></div>
+<div class="row"><span>Expected cash in drawer</span><b>${open?kes(expectedCash):lastShift?kes(lastShift.cashExpected):kes(state.till.float)}</b></div>
+<div class="row"><span>Shift transactions</span><b>${open?currentSales.length:lastShift?.transactionCount||0}</b></div>
+<div class="row"><span>Shift status</span><b class="${open?"ok":"low"}">${open?"Active shift · Sales enabled":"Closed · Sales blocked"}</b></div>
+${lastShift?`<div class="row"><span>Last close · ${lastShift.id}</span><b class="${lastShift.totalVariance===0?"ok":"low"}">${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)} variance</b></div>`:""}
 </div>
 </div>`;
+}
+
+function tillFlowView() {
+  if (state.tillFlow === "open") {
+    return `<div class="ov"><div class="mod till-modal"><div class="mh"><div><small>Till #${state.till.tillNumber}</small><h3>Open till</h3></div><button class="x" aria-label="Close" onclick="cancelTillFlow()">✕</button></div><div class="mb"><p class="mu">Enter the cash float counted into the drawer at shift start.</p><div><label class="fl" for="opening-float">Opening float</label><div class="inp"><span>KES</span><input id="opening-float" type="number" min="0" step="1" value="${state.tillDraft.float}" oninput="updateTillDraft('float',this.value)"></div></div></div><div class="ft"><button onclick="cancelTillFlow()">Cancel</button><button class="pri" onclick="submitTillOpen()">Open shift</button></div></div></div>`;
+  }
+  if (state.tillFlow !== "close") return "";
+  const expectedCash = shiftExpectedCash();
+  const expectedMpesa = shiftExpectedMpesa();
+  const denominationInputs = CASH_DENOMINATIONS.map(value => `<label class="denom"><span>KES ${value.toLocaleString("en-KE")}</span><input type="number" min="0" step="1" inputmode="numeric" aria-label="KES ${value} count" value="0" oninput="updateTillDenomination(${value},this.value)"></label>`).join("");
+  return `<div class="ov"><div class="mod till-modal"><div class="mh"><div><small>Till #${state.till.tillNumber} · ${state.till.cashier}</small><h3>Close till</h3></div><button class="x" aria-label="Close" onclick="cancelTillFlow()">✕</button></div><div class="mb"><div class="shift-expect"><div><span>Expected cash</span><b>${kes(expectedCash)}</b></div><div><span>Expected M-Pesa</span><b>${kes(expectedMpesa)}</b></div></div><div><label class="fl">Cash counted by denomination</label><div class="denom-grid">${denominationInputs}</div><div class="row"><span>Counted cash</span><b id="counted-cash">${kes(0)}</b></div><div class="row"><span>Cash variance</span><b id="cash-variance">${kes(-expectedCash)}</b></div></div><div><label class="fl" for="mpesa-received">M-Pesa received</label><div class="inp"><span>KES</span><input id="mpesa-received" type="number" min="0" step="1" placeholder="Enter received amount" oninput="updateTillDraft('mpesaReceived',this.value)"></div><div class="row"><span>M-Pesa variance</span><b id="mpesa-variance">${kes(-expectedMpesa)}</b></div></div><div class="sum bad"><span>Total variance</span><b id="total-variance">${kes(-expectedCash-expectedMpesa)}</b></div><div><label class="fl" for="variance-reason">Variance reason <small>(required when either amount differs)</small></label><input id="variance-reason" value="" placeholder="Explain the cash or M-Pesa difference" oninput="updateTillDraft('reason',this.value)"></div><div><label class="fl" for="owner-pin">Owner sign-off · PIN</label><input id="owner-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter owner PIN" oninput="updateTillDraft('ownerPin',this.value)"><small>Owner approval is required to close this shift.</small></div></div><div class="ft"><button onclick="cancelTillFlow()">Cancel</button><button class="pri" onclick="submitTillClose()">Close till &amp; sign off</button></div></div></div>`;
+}
+
+function shiftRcpt() {
+  const s = state.shiftReceipt;
+  if (!s) return "";
+  const counts = Object.entries(s.denominations).filter(([, count]) => Number(count) > 0).map(([value, count]) => `<div class="r m"><span>${count} × KES ${Number(value).toLocaleString("en-KE")}</span><span>${kes(Number(value)*Number(count))}</span></div>`).join("") || `<div class="r m"><span>No cash counted</span><span>${kes(0)}</span></div>`;
+  return `<div class="ov"><div class="rw"><div class="rok">${IC.ok}<div><b>Shift closed</b><small>Owner sign-off recorded</small></div></div><div class="paper"><div class="c"><b style="font-size:1rem">CELLAR &amp; CO.</b><br>SHIFT SUMMARY<br><span class="m">Till ${s.tillNumber} · ${s.id}</span></div><hr><div class="r"><span>Cashier</span><b>${s.cashier}</b></div><div class="r m"><span>Opened</span><span>${s.openedAt.toLocaleString("en-KE")}</span></div><div class="r m"><span>Closed</span><span>${s.closedAt.toLocaleString("en-KE")}</span></div><div class="r m"><span>Transactions</span><span>${s.transactionCount}</span></div><hr><div class="r"><span>Opening float</span><b>${kes(s.openingFloat)}</b></div><div class="r m"><span>Cash sales</span><span>${kes(s.cashSales)}</span></div><div class="r"><span>Expected cash</span><b>${kes(s.cashExpected)}</b></div><div class="r m"><span>Counted cash</span><span>${kes(s.cashCounted)}</span></div>${counts}<div class="r"><span>Cash variance</span><b>${s.cashVariance>0?"+":""}${kes(s.cashVariance)}</b></div><hr><div class="r"><span>Expected M-Pesa</span><b>${kes(s.mpesaExpected)}</b></div><div class="r m"><span>M-Pesa received</span><span>${kes(s.mpesaReceived)}</span></div><div class="r"><span>M-Pesa variance</span><b>${s.mpesaVariance>0?"+":""}${kes(s.mpesaVariance)}</b></div><hr><div class="r tt"><span>TOTAL VARIANCE</span><span>${s.totalVariance>0?"+":""}${kes(s.totalVariance)}</span></div>${s.reason?`<div class="m">Reason: ${esc(s.reason)}</div>`:""}<hr><div class="r m"><span>Owner sign-off</span><b>${s.signedOffBy}</b></div></div><div class="ft"><button onclick="toast('Shift summary sent to printer (demo)')">Print summary</button><button class="pri" onclick="state.shiftReceipt=null;render()">Done</button></div></div></div>`;
 }
 
 function usersView() {
@@ -1710,7 +1892,7 @@ function render() {
     <div class="side-foot">
       <div class="side-user">
         <b>${state.till.cashier}</b>
-        <small>Till ${state.till.tillNumber} · Float ${kes(state.till.float)}</small>
+        <small>Till ${state.till.tillNumber} · ${state.till.status === "open" ? `Float ${kes(state.till.float)}` : "Closed"}</small>
       </div>
     </div>
   </aside>
@@ -1751,7 +1933,9 @@ function render() {
 </div>
 ${state.payment ? pay() : ""}
 ${state.receipt ? rcpt() : ""}
-${state.productEditor ? productEditorView() : ""}`;
+${state.productEditor ? productEditorView() : ""}
+${state.tillFlow ? tillFlowView() : ""}
+${state.shiftReceipt ? shiftRcpt() : ""}`;
 }
 
 render();

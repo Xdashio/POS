@@ -144,6 +144,53 @@ async function runCheckout(page, width) {
     await runCheckout(mobile, 360);
     console.log('✓ 360px checkout completed through the bottom cart bar.');
     await mobile.close();
+
+    const tillPage = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+    await tillPage.goto(`file://${path.resolve(__dirname, '../prototype/index.html')}`, { waitUntil: 'domcontentloaded' });
+    const mpesaSale = await tillPage.evaluate(() => state.products.find(product => product.n === 'Tusker Lager').b);
+    await tillPage.getByRole('button', { name: 'Age verified' }).click();
+    await tillPage.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
+    await tillPage.getByRole('button', { name: /Charge KES/ }).click();
+    await tillPage.getByRole('button', { name: /M-Pesa/ }).click();
+    await tillPage.getByRole('button', { name: 'Send STK push' }).click();
+    await tillPage.getByText('Payment received', { exact: true }).waitFor();
+    await tillPage.getByRole('button', { name: 'Complete sale' }).click();
+    await tillPage.getByRole('button', { name: 'New sale' }).click();
+
+    await tillPage.getByRole('button', { name: 'Till', exact: true }).click();
+    await tillPage.getByRole('button', { name: 'Close till', exact: true }).click();
+    await tillPage.locator('[aria-label="KES 1000 count"]').fill('5');
+    await tillPage.locator('#mpesa-received').fill(String(mpesaSale - 50));
+    await tillPage.locator('#variance-reason').fill('M-Pesa short in shift close test');
+    await tillPage.locator('#owner-pin').fill('1234');
+    await tillPage.getByRole('button', { name: 'Close till & sign off' }).click();
+    await tillPage.getByText('Shift closed', { exact: true }).waitFor();
+    const closedShift = await tillPage.evaluate(() => state.shiftHistory.at(-1));
+    assert.equal(closedShift.cashExpected, 5000, 'Expected cash should start with the opening float and cash sales');
+    assert.equal(closedShift.cashCounted, 5000, 'Denomination count should total the cash received');
+    assert.equal(closedShift.mpesaExpected, mpesaSale, 'Expected M-Pesa should include completed M-Pesa sales');
+    assert.equal(closedShift.mpesaReceived, mpesaSale - 50, 'Close flow should record M-Pesa received');
+    assert.equal(closedShift.totalVariance, -50, 'Shift summary should calculate the combined variance');
+    assert.equal(closedShift.reason, 'M-Pesa short in shift close test', 'Shift close should retain the variance reason');
+    assert.equal(closedShift.ownerSignedOff, true, 'Owner PIN should sign off the close');
+    assert.match(await tillPage.locator('.paper').innerText(), /SHIFT SUMMARY/);
+    await tillPage.getByRole('button', { name: 'Done', exact: true }).click();
+
+    await tillPage.getByRole('button', { name: 'Reports', exact: true }).click();
+    assert.match(await tillPage.locator('.dash').innerText(), /M-Pesa short in shift close test/, 'Dashboard should show the latest shift variance reason');
+    await tillPage.getByRole('button', { name: 'Sell', exact: true }).click();
+    await tillPage.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
+    await tillPage.getByRole('button', { name: 'Age verified' }).click();
+    const closedCharge = tillPage.getByRole('button', { name: 'Till closed', exact: true });
+    assert.equal(await closedCharge.isDisabled(), true, 'Charge must remain disabled while the till is closed');
+    assert.deepEqual(await tillPage.evaluate(() => ({ charge: charge(), finish: finish() })), { charge: false, finish: false }, 'Checkout actions must reject a closed till');
+    await tillPage.getByRole('button', { name: 'Till', exact: true }).click();
+    await tillPage.getByRole('button', { name: 'Open till', exact: true }).click();
+    await tillPage.locator('#opening-float').fill('6000');
+    await tillPage.getByRole('button', { name: 'Open shift', exact: true }).click();
+    assert.deepEqual(await tillPage.evaluate(() => ({ status: state.till.status, float: state.till.openingFloat })), { status: 'open', float: 6000 }, 'Reopened till should record its opening float');
+    console.log('✓ Till close reconciles denomination cash and M-Pesa, requires variance reason and owner sign-off, shows a shift receipt, updates Reports, blocks closed-till sales, and reopens with a float.');
+    await tillPage.close();
   } finally {
     await browser.close();
   }

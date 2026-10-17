@@ -658,6 +658,42 @@ function runSmokeTests() {
   if (!addedProduct || state.products.length !== 18 || callFn("price", addedProduct, "b") !== 220) throw new Error("New product is missing or not priced for checkout");
   console.log("  ✓ Product edits update checkout, retain reorder/supplier settings, log the price change, and add a checkout-ready SKU.");
 
+  // Till open/close, reconciliation, sign-off, receipt, and closed-sale guard.
+  console.log("\n[13/13] Verifying Till Opening, Shift Reconciliation & Closed Till Guard...");
+  state.till.status = "open";
+  state.till.float = 5000;
+  state.till.openingFloat = 5000;
+  state.till.openedAt = new Date();
+  state.till.salesStartIndex = state.sales.length;
+  state.sales.push({ t: 1200, m: "cash", lines: [], at: new Date() });
+  state.sales.push({ t: 800, m: "mpesa", lines: [], at: new Date() });
+  if (callFn("shiftExpectedCash") !== 6200 || callFn("shiftExpectedMpesa") !== 800) throw new Error("Shift expected cash or M-Pesa did not include current shift sales");
+  if (!callFn("beginTillClose")) throw new Error("Could not open the close-till flow");
+  state.tillDraft.denominations[1000] = 6;
+  state.tillDraft.denominations[200] = 1;
+  state.tillDraft.mpesaReceived = "700";
+  state.tillDraft.ownerPin = "1234";
+  if (callFn("submitTillClose")) throw new Error("Till close accepted a variance without a reason");
+  state.tillDraft.reason = "M-Pesa receipt short by KES 100";
+  state.tillDraft.ownerPin = "1111";
+  if (callFn("submitTillClose")) throw new Error("Till close accepted an invalid owner PIN");
+  state.tillDraft.ownerPin = "1234";
+  if (!callFn("submitTillClose")) throw new Error("Till close rejected valid counts, reason, or owner sign-off");
+  const shift = state.shiftHistory[state.shiftHistory.length - 1];
+  if (state.till.status !== "closed" || !state.shiftReceipt) throw new Error("Till did not close and present its shift receipt");
+  if (shift.cashExpected !== 6200 || shift.cashCounted !== 6200 || shift.mpesaExpected !== 800 || shift.mpesaReceived !== 700 || shift.mpesaVariance !== -100 || shift.totalVariance !== -100) throw new Error("Closed shift reconciliation totals are incorrect");
+  if (!shift.ownerSignedOff || shift.signedOffBy !== "Owner" || shift.reason !== "M-Pesa receipt short by KES 100") throw new Error("Shift reason or owner sign-off was not retained");
+  if (callFn("charge")) throw new Error("Checkout charge should be blocked while till is closed");
+  const closedSellHtml = callFn("sell");
+  if (!closedSellHtml.includes("Till closed") || !closedSellHtml.includes("disabled")) throw new Error("Closed till state is not reflected in Sell checkout");
+  if (!callFn("dash").includes("M-Pesa receipt short by KES 100")) throw new Error("Till variance and reason did not reach the dashboard");
+  state.shiftReceipt = null;
+  if (!callFn("beginTillOpen")) throw new Error("Could not open the till after close");
+  state.tillDraft.float = "6000";
+  if (!callFn("submitTillOpen") || state.till.status !== "open" || state.till.openingFloat !== 6000) throw new Error("Opening float was not recorded when reopening the till");
+  console.log("  ✓ Close counts reconcile cash and M-Pesa, require a reason and owner PIN, produce a receipt, and feed dashboard variance.");
+  console.log("  ✓ Closed tills block checkout; opening a new shift records its float.");
+
   console.log("\n=========================================");
   console.log("🎉 ALL SMOKE TESTS PASSED SUCCESSFULLY! 🎉");
   console.log("=========================================\n");
