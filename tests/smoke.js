@@ -631,6 +631,33 @@ function runSmokeTests() {
   if (!reportsHtml.includes("Negative stock") || !reportsHtml.includes(zeroProduct.n)) throw new Error("Negative stock item missing from Reports reorder list");
   console.log("  ✓ Zero-stock sale is recorded, flagged in History, and shown on the Reports reorder list.");
 
+  // Product price edits update checkout pricing and create a complete audit record.
+  console.log("\n[12/12] Verifying product edit, price audit, and add-product flow...");
+  const priceProduct = state.products.find(p => p.n === "Tusker Lager");
+  const oldPrice = priceProduct.b;
+  const newPrice = oldPrice + 50;
+  callFn("openProductEditor", priceProduct.id);
+  callFn("updateProductDraft", "b", newPrice);
+  callFn("updateProductDraft", "buyPrice", priceProduct.buyPrice + 10);
+  callFn("updateProductDraft", "reorderLevel", 2);
+  callFn("updateProductDraft", "preferredSupplier", state.suppliers[1]);
+  if (!callFn("saveProductEditor")) throw new Error("Failed to save product edits");
+  if (callFn("price", priceProduct, "b") !== newPrice) throw new Error("Product price edit did not update checkout price");
+  if (priceProduct.reorderLevel !== 2 || priceProduct.preferredSupplier !== state.suppliers[1]) throw new Error("Product reorder level or preferred supplier was not saved");
+  const priceLog = state.priceChanges[state.priceChanges.length - 1];
+  if (!priceLog || priceLog.oldPrice !== oldPrice || priceLog.newPrice !== newPrice || !priceLog.user || !priceLog.at || Number.isNaN(new Date(priceLog.at).getTime())) {
+    throw new Error("Price change audit is missing old/new price, user, or timestamp");
+  }
+
+  callFn("openProductEditor");
+  for (const [field, value] of Object.entries({ n: "Smoke Test Soda", s: "330ml", g: "Beer", b: 220, k: 24, tn: 0, t: 0, reorderLevel: 1, preferredSupplier: state.suppliers[0], buyPrice: 140 })) {
+    callFn("updateProductDraft", field, value);
+  }
+  if (!callFn("saveProductEditor")) throw new Error("Failed to add product from editor");
+  const addedProduct = state.products.find(p => p.n === "Smoke Test Soda");
+  if (!addedProduct || state.products.length !== 18 || callFn("price", addedProduct, "b") !== 220) throw new Error("New product is missing or not priced for checkout");
+  console.log("  ✓ Product edits update checkout, retain reorder/supplier settings, log the price change, and add a checkout-ready SKU.");
+
   console.log("\n=========================================");
   console.log("🎉 ALL SMOKE TESTS PASSED SUCCESSFULLY! 🎉");
   console.log("=========================================\n");

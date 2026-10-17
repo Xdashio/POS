@@ -99,6 +99,45 @@ async function runCheckout(page, width) {
     assert.equal(after.stock, before.stock + before.pack * 2, 'Receiving two cartons should add two pack sizes on hand');
     assert.equal(after.low, before.low - 1, 'Receiving two cartons should clear one item from low stock');
     console.log(`✓ Desktop checkout and stock receipt passed (${before.low} → ${after.low} low-stock items).`);
+
+    await desktop.getByRole('button', { name: 'Products', exact: true }).click();
+    const productRow = desktop.locator('.tab-tbl tbody tr').filter({ hasText: 'Hennessy VS' });
+    await productRow.getByRole('button', { name: 'Edit' }).click();
+    await desktop.locator('#product-price').fill('7600');
+    await desktop.locator('#product-buy-price').fill('4000');
+    await desktop.locator('#product-reorder-level').fill('2');
+    await desktop.locator('#product-supplier').selectOption({ label: 'UDV Kenya (Diageo)' });
+    assert.match(await desktop.locator('#product-margin').innerText(), /47\.4% gross margin/, 'Margin should update live from retail and buy price');
+    await desktop.getByRole('button', { name: 'Save product' }).click();
+    const edited = await desktop.evaluate(() => {
+      const product = state.products.find(item => item.n === 'Hennessy VS');
+      const change = state.priceChanges[state.priceChanges.length - 1];
+      return { price: product.b, reorderLevel: product.reorderLevel, supplier: product.preferredSupplier, change: { oldPrice: change.oldPrice, newPrice: change.newPrice, user: change.user, at: change.at instanceof Date } };
+    });
+    assert.equal(edited.price, 7600, 'Edited price should be saved');
+    assert.equal(edited.reorderLevel, 2, 'Edited reorder level should be saved');
+    assert.equal(edited.supplier, 'UDV Kenya (Diageo)', 'Preferred supplier should be saved');
+    assert.deepEqual(edited.change, { oldPrice: 7500, newPrice: 7600, user: 'Cashier 1', at: true }, 'Price log should retain actor, timestamp, and old/new price');
+    assert.match(await desktop.locator('.price-log').innerText(), /KES 7,500 → KES 7,600 bottle/);
+    await desktop.getByRole('button', { name: 'Sell', exact: true }).click();
+    const editedCard = desktop.locator('.pt').filter({ hasText: 'Hennessy VS' });
+    assert.match(await editedCard.innerText(), /KES 7,600/, 'Checkout product card should use the edited price immediately');
+    await editedCard.click();
+    assert.match(await desktop.locator('.cart .ln').filter({ hasText: 'Hennessy VS' }).innerText(), /KES 7,600/, 'Checkout cart should use the edited price immediately');
+    await desktop.getByRole('button', { name: 'Clear' }).click();
+
+    await desktop.getByRole('button', { name: 'Products', exact: true }).click();
+    await desktop.getByRole('button', { name: 'Add product', exact: true }).click();
+    await desktop.locator('#product-name').fill('E2E Sparkling Test');
+    await desktop.locator('#product-size').fill('330ml');
+    await desktop.locator('#product-price').fill('999');
+    await desktop.locator('#product-buy-price').fill('500');
+    await desktop.getByRole('button', { name: 'Add product', exact: true }).last().click();
+    assert.equal(await desktop.evaluate(() => state.products.some(item => item.n === 'E2E Sparkling Test')), true, 'Add product should append a catalog item');
+    await desktop.getByRole('button', { name: 'Sell', exact: true }).click();
+    const addedCard = desktop.locator('.pt').filter({ hasText: 'E2E Sparkling Test' });
+    assert.match(await addedCard.innerText(), /KES 999/, 'Added product should be available in checkout');
+    console.log('✓ Product editing updates live margin, checkout price, and audit log; new product appears in checkout.');
     await desktop.close();
 
     const mobile = await browser.newPage({ viewport: { width: 360, height: 900 } });

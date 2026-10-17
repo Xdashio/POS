@@ -186,6 +186,7 @@ select:focus{outline:2px solid var(--act);outline-offset:1px}
 .big.low{font-size:1.55rem}
 .stock-dash{grid-template-columns:repeat(3,minmax(0,1fr))}
 .policy-options{display:flex;flex-wrap:wrap;gap:.9rem}.policy-options label{display:flex;align-items:center;gap:.4rem;min-height:44px}.policy-options input[type=radio]{width:1rem;min-height:1rem;accent-color:var(--ac)}
+.drawer-backdrop{place-items:stretch end;padding:0}.product-drawer{height:100%;max-height:100%;width:min(36rem,100%);overflow:auto;display:flex;flex-direction:column;gap:1rem;padding:1.25rem;background:var(--card);border:1px solid var(--bd);border-radius:var(--rl) 0 0 var(--rl);box-shadow:var(--sh)}.product-drawer header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.product-drawer h3{margin:0;font-size:1.45rem}.product-fields{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.product-fields label{display:flex;flex-direction:column;gap:.3rem;color:var(--mu);font-size:.8rem;font-weight:700}.product-fields .wide{grid-column:1/-1}.product-fields input,.product-fields select{color:var(--tx)}.product-margin{padding:.7rem .9rem;border-radius:var(--rs);background:var(--acs);color:var(--act);font-weight:700}.price-log .row{align-items:flex-start}
 @media (pointer:coarse){.stock-tabs button,.stock-filters button,.row-action{min-height:44px}}
 @media (max-width:999px){
   .tab-tbl.stock-responsive,.tab-tbl.stock-responsive tbody{display:block;width:100%}.tab-tbl.stock-responsive thead{display:none}.tab-tbl.stock-responsive tbody{display:grid;gap:.7rem}
@@ -290,6 +291,9 @@ const state = {
   // Stock Management State (Prompt 1)
   stockTab: "overview", // "overview" | "receive" | "take" | "adjust" | "history"
   zeroStockPolicy: "allow", // "allow" | "block"
+  productEditor: null,
+  productDraft: null,
+  priceChanges: [],
   stockFilter: "all", // "all" | "low"
   stockSearch: "",
   historySearch: "",
@@ -369,6 +373,11 @@ const state = {
       baseUnit: tn > 0 ? "tot" : "bottle",
       baseUnitsPerBottle: tn > 0 ? tn : 1,
       reorderLevel: ["Captain Morgan", "Amarula"].includes(a[0]) ? 0.5 : 1,
+      preferredSupplier: "East African Breweries Ltd (EABL)",
+      buyPrice: (() => {
+        const receipt = [...initialMovements].reverse().find(m => m.productId === i && m.type === "receipt" && m.buyingPrice);
+        return receipt ? Math.round(receipt.buyingPrice / a[4]) : Math.round(a[3] * 0.65);
+      })(),
       cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
     };
     Object.defineProperty(prod, "st", {
@@ -411,8 +420,7 @@ function onHandLabel(p) {
   return p.tn ? `${amount} (${fs(bottles * p.tn)} tots)` : amount;
 }
 function productCostPerBottle(p) {
-  const receipt = [...state.stockMovements].reverse().find(m => m.productId === p.id && m.type === "receipt" && m.buyingPrice);
-  return receipt ? receipt.buyingPrice / p.k : p.b * .65;
+  return p.buyPrice;
 }
 
 // Append a stock movement to the ledger while honoring the zero-stock sale policy
@@ -1433,6 +1441,106 @@ function stockView() {
   </div>`;
 }
 
+function openProductEditor(id = null) {
+  if (id === null) {
+    state.productEditor = { isNew: true, id: null };
+    state.productDraft = { n: "", s: "750ml", g: "Spirits", b: 1000, k: 12, tn: 0, t: 0, reorderLevel: 1, preferredSupplier: state.suppliers[0], buyPrice: 650 };
+  } else {
+    const p = state.products.find(product => product.id === id);
+    if (!p) return false;
+    state.productEditor = { isNew: false, id };
+    state.productDraft = { n: p.n, s: p.s, g: p.g, b: p.b, k: p.k, tn: p.tn, t: p.t, reorderLevel: p.reorderLevel, preferredSupplier: p.preferredSupplier, buyPrice: p.buyPrice };
+  }
+  render();
+  return true;
+}
+
+function updateProductDraft(field, value) {
+  const d = state.productDraft;
+  if (!d) return false;
+  const numeric = ["b", "k", "tn", "t", "reorderLevel", "buyPrice"].includes(field);
+  const previousBottlePrice = d.b;
+  d[field] = numeric ? Number(value) : value;
+  if (field === "b" && d.tn && previousBottlePrice > 0) {
+    d.t = Math.round(d.t * d.b / previousBottlePrice);
+    const totPrice = $("product-tot-price");
+    if (totPrice) totPrice.value = d.t;
+  }
+  const margin = $("product-margin");
+  if (margin) margin.textContent = `${d.b > 0 ? ((d.b - d.buyPrice) / d.b * 100).toFixed(1) : "0.0"}% gross margin`;
+  return true;
+}
+
+function productEditorView() {
+  const d = state.productDraft;
+  if (!d) return "";
+  const margin = d.b > 0 ? ((d.b - d.buyPrice) / d.b * 100).toFixed(1) : "0.0";
+  return `<div class="ov drawer-backdrop" onclick="if(event.target===this)closeProductEditor()">
+    <section class="product-drawer" role="dialog" aria-modal="true" aria-labelledby="product-editor-title">
+      <header><div><small>${state.productEditor.isNew ? "NEW CATALOG ITEM" : "PRODUCT DETAILS"}</small><h3 id="product-editor-title">${state.productEditor.isNew ? "Add product" : `Edit ${d.n}`}</h3></div><button class="x" aria-label="Close" onclick="closeProductEditor()">✕</button></header>
+      <div class="product-fields">
+        <label class="wide" for="product-name">Product name<input id="product-name" value="${d.n}" oninput="updateProductDraft('n',this.value)"></label>
+        <label for="product-size">Size<input id="product-size" value="${d.s}" oninput="updateProductDraft('s',this.value)"></label>
+        <label for="product-category">Category<select id="product-category" onchange="updateProductDraft('g',this.value)">${["Beer","Whisky","Spirits","Wine"].map(g=>`<option ${d.g===g?"selected":""}>${g}</option>`).join("")}</select></label>
+        <label for="product-price">Bottle retail price (KES)<input id="product-price" type="number" min="1" step="1" value="${d.b}" oninput="updateProductDraft('b',this.value)"></label>
+        <label for="product-pack">Bottles per carton<input id="product-pack" type="number" min="1" step="1" value="${d.k}" oninput="updateProductDraft('k',this.value)"></label>
+        <label for="product-tots-per-bottle">Tots per bottle<input id="product-tots-per-bottle" type="number" min="0" step="1" value="${d.tn}" oninput="updateProductDraft('tn',this.value)"></label>
+        <label for="product-tot-price">Retail price per tot (KES)<input id="product-tot-price" type="number" min="0" step="1" value="${d.t}" oninput="updateProductDraft('t',this.value)"></label>
+        <label for="product-reorder-level">Reorder level (cartons)<input id="product-reorder-level" type="number" min="0" step="0.5" value="${d.reorderLevel}" oninput="updateProductDraft('reorderLevel',this.value)"></label>
+        <label for="product-supplier">Preferred supplier<select id="product-supplier" onchange="updateProductDraft('preferredSupplier',this.value)">${state.suppliers.map(s=>`<option value="${s}" ${d.preferredSupplier===s?"selected":""}>${s}</option>`).join("")}</select></label>
+        <label for="product-buy-price">Buy price per bottle (KES)<input id="product-buy-price" type="number" min="0" step="1" value="${d.buyPrice}" oninput="updateProductDraft('buyPrice',this.value)"></label>
+        <div class="product-margin wide" id="product-margin">${margin}% gross margin</div>
+      </div>
+      <div class="ft"><button class="ghost" onclick="closeProductEditor()">Cancel</button><button class="pri" onclick="saveProductEditor()">${state.productEditor.isNew ? "Add product" : "Save product"}</button></div>
+    </section>
+  </div>`;
+}
+
+function closeProductEditor() {
+  state.productEditor = null;
+  state.productDraft = null;
+  render();
+}
+
+function cleanProductLabel(value) {
+  return String(value).replace(/[<>\"]/g, "").trim();
+}
+
+function saveProductEditor() {
+  const d = state.productDraft;
+  if (!d || !cleanProductLabel(d.n) || !cleanProductLabel(d.s) || ![d.b,d.k,d.tn,d.t,d.reorderLevel,d.buyPrice].every(Number.isFinite) || d.b <= 0 || d.k <= 0 || d.tn < 0 || d.t < 0 || d.reorderLevel < 0 || d.buyPrice < 0) {
+    toast("Enter a name, size, and valid product prices");
+    return false;
+  }
+  if (state.productEditor.isNew) {
+    const id = Math.max(-1, ...state.products.map(product => product.id)) + 1;
+    const p = {
+      id, n: cleanProductLabel(d.n), s: cleanProductLabel(d.s), g: d.g, b: d.b, k: Math.round(d.k), tn: Math.round(d.tn), t: Math.round(d.t),
+      baseUnit: d.tn > 0 ? "tot" : "bottle", baseUnitsPerBottle: d.tn > 0 ? Math.round(d.tn) : 1,
+      reorderLevel: d.reorderLevel, preferredSupplier: d.preferredSupplier, buyPrice: d.buyPrice,
+      cp: Math.round(d.b * Math.round(d.k) * 0.97 / 10) * 10
+    };
+    Object.defineProperty(p, "st", { get() { return getProductStock(this.id); }, enumerable: true });
+    state.products.push(p);
+  } else {
+    const p = state.products.find(product => product.id === state.productEditor.id);
+    const oldPrice = p.b, oldCartonPrice = p.cp, oldTotPrice = p.t, oldBuyPrice = p.buyPrice;
+    const newCartonPrice = Math.round(d.b * Math.round(d.k) * 0.97 / 10) * 10;
+    if (oldPrice !== d.b || oldCartonPrice !== newCartonPrice || oldTotPrice !== Math.round(d.t) || oldBuyPrice !== d.buyPrice) {
+      state.priceChanges.push({ productId: p.id, productName: p.n, oldPrice, newPrice: d.b, oldCartonPrice, newCartonPrice, oldTotPrice, newTotPrice: Math.round(d.t), oldBuyPrice, newBuyPrice: d.buyPrice, user: state.till.cashier, at: new Date() });
+    }
+    p.n = cleanProductLabel(d.n); p.s = cleanProductLabel(d.s); p.g = d.g; p.b = d.b; p.k = Math.round(d.k); p.tn = Math.round(d.tn); p.t = Math.round(d.t);
+    p.baseUnit = p.tn > 0 ? "tot" : "bottle"; p.baseUnitsPerBottle = p.tn > 0 ? p.tn : 1;
+    p.reorderLevel = d.reorderLevel; p.preferredSupplier = d.preferredSupplier; p.buyPrice = d.buyPrice;
+    p.cp = Math.round(p.b * p.k * 0.97 / 10) * 10;
+  }
+  state.productEditor = null;
+  state.productDraft = null;
+  render();
+  toast("Product saved");
+  return true;
+}
+
 function productsView() {
   const minP = Math.min(...state.products.map(p => p.b));
   const maxP = Math.max(...state.products.map(p => p.b));
@@ -1440,16 +1548,16 @@ function productsView() {
   return `<div class="dash">
 <div class="card"><h4>Total catalog</h4><div class="big">${state.products.length} SKUs</div><small>Across 4 categories</small></div>
 <div class="card"><h4>Price range</h4><div class="big">${kes(minP)} – ${kes(maxP)}</div><small>Bottle retail price</small></div>
-<div class="card s2"><h4>Carton discount</h4><div class="big">3% off pack</div><small>Prompt 2: Edit drawer · Excel import · Price change log</small></div>
+<div class="card s2"><h4>Carton discount</h4><div class="big">3% off pack</div><small>Create and edit items · Live margin · Price change audit</small></div>
 
 <div class="card s2" style="grid-column:1/-1">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-<h4>Product list &amp; pricing</h4>
-<small class="mu">All prices include VAT 16%</small>
+<div><h4>Product list &amp; pricing</h4><small class="mu">All prices include VAT 16%</small></div>
+<button class="row-action" onclick="openProductEditor()">Add product</button>
 </div>
 <div style="overflow-x:auto">
 <table class="tab-tbl">
-<thead><tr><th>Product</th><th>Category</th><th style="text-align:right">Bottle</th><th style="text-align:right">Carton</th><th style="text-align:right">Tot</th><th style="text-align:right">Stock</th></tr></thead>
+<thead><tr><th>Product</th><th>Category</th><th style="text-align:right">Bottle</th><th style="text-align:right">Carton</th><th style="text-align:right">Tot</th><th style="text-align:right">Stock</th><th></th></tr></thead>
 <tbody>
 ${state.products.map(p=>`<tr>
 <td><b>${p.n}</b> <small class="mu">${p.s}</small></td>
@@ -1458,10 +1566,15 @@ ${state.products.map(p=>`<tr>
 <td style="text-align:right">${kes(p.cp)} <small class="mu">(${p.k}pk)</small></td>
 <td style="text-align:right">${p.t ? kes(p.t) : "—"}</td>
 <td style="text-align:right"><b class="${p.st<=5?"low":""}">${fs(p.st)}</b></td>
+<td><button class="row-action product-edit" onclick="openProductEditor(${p.id})">Edit</button></td>
 </tr>`).join("")}
 </tbody>
 </table>
 </div>
+</div>
+<div class="card s2 price-log" style="grid-column:1/-1">
+<h4>Price change log</h4>
+${state.priceChanges.length ? state.priceChanges.slice().reverse().slice(0,5).map(entry=>`<div class="row"><span><b>${entry.productName}</b><br><small>${kes(entry.oldPrice)} → ${kes(entry.newPrice)} bottle · ${kes(entry.oldCartonPrice)} → ${kes(entry.newCartonPrice)} carton · ${kes(entry.oldTotPrice)} → ${kes(entry.newTotPrice)} tot · ${kes(entry.oldBuyPrice)} → ${kes(entry.newBuyPrice)} buy</small></span><small>${entry.user} · ${new Date(entry.at).toLocaleString("en-KE")}</small></div>`).join("") : `<small class="mu">No price changes recorded.</small>`}
 </div>
 </div>`;
 }
@@ -1637,7 +1750,8 @@ function render() {
   </nav>
 </div>
 ${state.payment ? pay() : ""}
-${state.receipt ? rcpt() : ""}`;
+${state.receipt ? rcpt() : ""}
+${state.productEditor ? productEditorView() : ""}`;
 }
 
 render();
