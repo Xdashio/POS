@@ -207,6 +207,7 @@ function runSmokeTests() {
   const jwInitialTots = callFn("getProductBaseUnits", jw.id); // 200
   callFn("add", jw.id);
   callFn("unit", 0, "c");
+  state.ageVerified = true;
   callFn("charge");
   callFn("finish");
   const jwLastMov = state.stockMovements[state.stockMovements.length - 1];
@@ -315,10 +316,10 @@ function runSmokeTests() {
   const jdPackSize = jd.k; // 12 bottles per carton
   const jdTotsPerBtl = jd.baseUnitsPerBottle; // 25 tots
 
-  // A: Jack Daniel's is low stock (<= 5), so it must appear in dashboard reorder list
-  const dashBeforeRec = callFn("dash");
-  if (!dashBeforeRec.includes(jd.n)) {
-    throw new Error(`Jack Daniel's (${jdInitialBtl} btl <= 5) should appear in dash() reorder shortage list before receipt`);
+  // A: Jack Daniel's is low stock (<= 5), so it must appear in the velocity-based reorder list
+  const reorderBeforeRec = callFn("reorderSuggestions");
+  if (!reorderBeforeRec.some(item => item.product.id === jd.id)) {
+    throw new Error(`Jack Daniel's (${jdInitialBtl} btl <= 5) should appear in reorder suggestions before receipt`);
   }
 
   // B: Receive 2 cartons of Jack Daniel's
@@ -356,12 +357,12 @@ function runSmokeTests() {
   }
   console.log(`  ✓ Receiving 2 cartons of ${jd.n} raised stock by 2 pack sizes (+24 btl: ${jdInitialBtl} -> ${jd.st} btl).`);
 
-  // C: Dashboard shortage figures update dynamically: JD is now 27 btl (> 5), so no longer in reorder list
-  const dashAfterRec = callFn("dash");
-  if (dashAfterRec.includes(jd.n)) {
-    throw new Error("Jack Daniel's should have cleared from dashboard shortage figures after receipt raised stock to 27");
+  // C: Reorder suggestions update dynamically: JD is now 27 btl (> 5), so no longer needed
+  const reorderAfterRec = callFn("reorderSuggestions");
+  if (reorderAfterRec.some(item => item.product.id === jd.id)) {
+    throw new Error("Jack Daniel's should have cleared from reorder suggestions after receipt raised stock to 27");
   }
-  console.log("  ✓ Dashboard shortage figures dynamically cleared Jack Daniel's after stock rose above 5.");
+  console.log("  ✓ Reorder suggestions dynamically cleared Jack Daniel's after stock rose above 5.");
 
   // D: A sale lowers it: selling 1 carton of JD drops stock from 27 to 15
   state.cart = [];
@@ -380,12 +381,12 @@ function runSmokeTests() {
   callFn("finish");
   if (jd.st !== 3) throw new Error(`Expected JD stock to drop to 3 btl after selling 2nd carton, got ${jd.st}`);
 
-  // E: Dashboard shortage figures update again: JD is back in reorder list!
-  const dashAfterSale = callFn("dash");
-  if (!dashAfterSale.includes(jd.n)) {
-    throw new Error("Jack Daniel's should reappear in dashboard shortage figures after stock dropped back to 3");
+  // E: Reorder suggestions update again: JD is back in the list!
+  const reorderAfterSale = callFn("reorderSuggestions");
+  if (!reorderAfterSale.some(item => item.product.id === jd.id)) {
+    throw new Error("Jack Daniel's should reappear in reorder suggestions after stock dropped back to 3");
   }
-  console.log(`  ✓ Sales lowered ${jd.n} stock (27 -> 15 -> 3 btl) and dashboard shortage figures updated dynamically.`);
+  console.log(`  ✓ Sales lowered ${jd.n} stock (27 -> 15 -> 3 btl) and reorder suggestions updated dynamically.`);
 
   // Quick receive helper check
   callFn("quickReceive", jd.id);
@@ -637,10 +638,9 @@ function runSmokeTests() {
   if (!negativeSale.negativeStock || zeroProduct.st !== -1) throw new Error("Zero-stock sale was not flagged and recorded as negative");
   const negativeHistory = callFn("renderHistoryTab");
   if (!negativeHistory.includes("negative stock sale")) throw new Error("Flagged negative sale missing from Stock History");
-  const reportsHtml = callFn("dash");
-  if (!reportsHtml.includes("Negative stock") || !reportsHtml.includes(zeroProduct.n)) throw new Error("Negative stock item missing from Reports reorder list");
+  if (!callFn("reorderSuggestions").some(item => item.product.id === zeroProduct.id)) throw new Error("Negative stock item missing from reorder suggestions");
   state.receipt = null;
-  console.log("  ✓ Zero-stock sale is recorded, flagged in History, and shown on the Reports reorder list.");
+  console.log("  ✓ Zero-stock sale is recorded, flagged in History, and included in reorder suggestions.");
 
   // Product price edits update checkout pricing and create a complete audit record.
   console.log("\n[12/12] Verifying product edit, price audit, and add-product flow...");
@@ -701,6 +701,7 @@ function runSmokeTests() {
   if (discountedSale.discountAmount !== undiscountedTotal - discountedSale.t) throw new Error("Receipt did not record the approved discount amount");
   callFn("requestSaleVoid", discountedSale.no);
   if (state.approval?.action !== "Void sale") throw new Error("Void did not request owner approval");
+  state.approvalReason = "Test duplicate sale";
   state.approvalPin = "2222";
   if (callFn("approveOwnerAction")) throw new Error("Invalid PIN approved a void");
   state.approvalPin = "1234";
@@ -739,7 +740,7 @@ function runSmokeTests() {
   if (callFn("charge")) throw new Error("Checkout charge should be blocked while till is closed");
   const closedSellHtml = callFn("sell");
   if (!closedSellHtml.includes("Till closed") || !closedSellHtml.includes("disabled")) throw new Error("Closed till state is not reflected in Sell checkout");
-  if (!callFn("dash").includes("M-Pesa receipt short by KES 100")) throw new Error("Till variance and reason did not reach the dashboard");
+  if (!state.shiftHistory.some(item => item.reason === "M-Pesa receipt short by KES 100")) throw new Error("Till variance and reason were not retained in shift history");
   state.shiftReceipt = null;
   if (!callFn("beginTillOpen")) throw new Error("Could not open the till after close");
   state.tillDraft.float = "6000";

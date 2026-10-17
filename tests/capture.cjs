@@ -72,6 +72,8 @@ function parseArgs(argv) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, deviceScaleFactor: 1 });
       await page.goto(`file://${prototype}`, { waitUntil: 'domcontentloaded' });
       await page.evaluate(value => { document.documentElement.dataset.theme = value; }, theme);
+      await page.locator('#login-pin').fill('1234');
+      await page.getByRole('button', { name: 'Sign in' }).click();
       await page.getByRole('button', { name: 'Stock', exact: true }).click();
       for (const screen of options.screens) {
         if (screen !== 'overview') {

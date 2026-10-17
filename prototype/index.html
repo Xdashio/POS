@@ -84,18 +84,35 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .pt{display:flex;flex-direction:column;align-items:stretch;gap:.2rem;text-align:left;padding:.55rem;border-radius:var(--rm);background:var(--tile);min-height:0}
 .pt:hover:not(:disabled){border-color:var(--gd);transform:translateY(-2px)}.pt:active{transform:scale(.98)}
 .pt b{font-size:.92rem;line-height:1.2;margin-top:.35rem}.pt .pr{font-weight:700}
-.ph{display:grid;place-items:center;color:var(--mu);background:linear-gradient(145deg,var(--ph1),var(--ph2));border-radius:var(--rs);aspect-ratio:4/3;width:100%}
-.ph svg{width:36%;height:auto;opacity:.8}
-.ph.th{width:2.9rem;aspect-ratio:1;grid-row:span 2;align-self:center}.ph.th svg{width:62%}
+.ph{display:grid;place-items:center;overflow:hidden;color:var(--mu);background:#fff;border:1px solid var(--bd);border-radius:var(--rs);aspect-ratio:4/3;width:100%}
+.ph img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.ph.th{width:2.9rem;aspect-ratio:1;grid-row:span 2;align-self:center}
 .low{color:var(--wn);font-size:.8rem}
 .cart{grid-column:2;grid-row:1/3;display:flex;flex-direction:column;gap:.75rem;min-height:0}
 .chead{display:flex;justify-content:space-between;align-items:center}.cclose{display:none;min-height:2.3rem}
 .lines{flex:1;overflow:auto;display:flex;flex-direction:column;gap:.5rem}
 .ln{display:grid;grid-template-columns:auto 1fr auto;gap:.4rem .7rem;padding:.6rem;border:1px solid var(--bd);border-radius:var(--rm);background:var(--tile);align-items:center}
 .ln .lp{font-weight:700;text-align:right}
+.line-tools{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;grid-column:2}
+.line-tools button{min-height:2.2rem;padding:0 .6rem;font-size:.78rem}
+.line-tools .line-void{color:var(--wn)}
 .seg{display:flex;gap:.2rem;padding:.2rem;background:var(--bg);border-radius:var(--rm);justify-self:start}
 .seg button{min-height:2.2rem;border:0;background:transparent;padding:0 .75rem}
 .qty{display:flex;align-items:center;gap:.4rem;justify-self:end}.qty button{width:2.3rem;min-height:2.3rem;padding:0}
+.cart-commands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.45rem}
+.cart-commands button{min-height:2.7rem;padding:0 .45rem;font-size:.82rem}
+.scan-tools{display:flex;align-items:stretch;gap:.5rem}
+.scan-tools input{min-width:0;flex:1}
+.scan-tools button{flex:none;min-height:2.9rem;padding:0 .7rem;font-size:.8rem}
+.scan-tools kbd,.pri kbd{border:1px solid currentColor;border-radius:4px;padding:.05rem .25rem;font:700 .68rem ui-monospace,Menlo,Consolas,monospace;opacity:.78}
+.cart-total-discount{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.cart-total-discount button{min-height:2.5rem;padding:0 .7rem;font-size:.82rem}
+.held-list{display:flex;flex-direction:column;gap:.55rem}
+.held-sale{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.2rem .5rem;align-items:center;padding:.75rem;border:1px solid var(--bd);border-radius:var(--rm);background:var(--tile)}
+.held-sale b,.held-sale small{grid-column:1}
+.held-sale button{grid-column:auto;grid-row:1/3;min-width:4.5rem}
+.discount-field{display:flex;align-items:center;gap:.6rem}.discount-field input{text-align:right;font-weight:700}
+@media (pointer:coarse){.line-tools button,.seg button,.qty button,.cart-commands button,.cart-total-discount button,.scan-tools button{min-height:44px}.qty button{width:44px}.pt{min-height:44px}.pt:hover:not(:disabled){transform:none}.pt:active{transform:scale(.98)}}
 .tot{border-top:1px dashed var(--bd);padding-top:.7rem;display:flex;flex-direction:column;gap:.25rem}.tot div{display:flex;justify-content:space-between}
 .empty{margin:auto;text-align:center;color:var(--mu)}
 
@@ -110,7 +127,12 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .ft{display:flex;gap:.5rem}.ft button{flex:1}
 .rc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;display:flex;flex-direction:column;gap:.2rem}.rc .row{border:0;padding:1px 0}.rc hr{border:0;border-top:1px dashed var(--mu);width:100%;margin:.4rem 0}
 .qr{width:4.5rem;height:4.5rem;border:2px dashed var(--mu);border-radius:var(--rs);display:grid;place-items:center;font-size:.65rem;color:var(--mu);margin:.4rem auto}
-.toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);background:var(--ac);color:var(--onac);padding:.6rem 1.1rem;border-radius:var(--rs);z-index:30;font-weight:600}
+.toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);display:flex;align-items:center;gap:.55rem;max-width:min(36rem,calc(100vw - 2rem));background:var(--ac);color:#fff;padding:.65rem 1rem;border-radius:var(--rs);z-index:60;font-weight:700;box-shadow:var(--sh)}.toast-success{background:var(--ok)}.toast-error{background:var(--wn)}.toast-info{background:var(--ac)}.toast-icon{display:inline-flex;flex:none}.toast-icon svg{width:1.1rem;height:1.1rem}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;min-height:9rem;padding:1.2rem;text-align:center;color:var(--mu)}.empty-state>b{color:var(--tx)}.empty-state>small{max-width:32rem}.empty-state-icon{display:grid;place-items:center;width:2.75rem;height:2.75rem;margin-bottom:.25rem;border-radius:50%;background:var(--acs);color:var(--act)}.empty-state-icon svg{width:1.4rem;height:1.4rem}
+.loading-skeleton{display:flex;flex-direction:column;gap:.4rem;margin:.45rem 0}.skeleton-line{display:block;height:.55rem;width:70%;border-radius:99px;background:linear-gradient(90deg,var(--tile) 20%,var(--bd) 45%,var(--tile) 70%);background-size:220% 100%;animation:skeleton-shimmer 1.1s linear infinite}.skeleton-line-2{width:48%}.skeleton-line-3{width:82%}@keyframes skeleton-shimmer{to{background-position:-220% 0}}
+.demo-guide-fab{position:fixed;right:1.1rem;bottom:1.1rem;z-index:18;display:inline-flex;align-items:center;gap:.45rem;min-height:46px;padding:0 .9rem;border-radius:99px;background:var(--ac);border-color:var(--ac);color:var(--onac);font-weight:800;box-shadow:var(--sh)}.demo-guide-fab svg{width:1.2rem;height:1.2rem}
+#demo-spotlight{position:fixed;z-index:40;left:50%;top:50%;width:1px;height:1px;border:2px solid var(--gd);border-radius:var(--rm);box-shadow:0 0 0 9999px rgba(16,14,20,.62);pointer-events:none;transition:left .2s,top .2s,width .2s,height .2s}
+.demo-guide-card{position:fixed;right:1rem;bottom:1rem;z-index:41;width:min(27rem,calc(100vw - 2rem));display:flex;flex-direction:column;gap:.65rem;padding:1rem;background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:0 18px 60px rgba(0,0,0,.25)}.demo-guide-head{display:flex;align-items:center;gap:.65rem}.demo-guide-head>div{min-width:0;flex:1}.demo-guide-mark{display:grid;place-items:center;flex:none;width:2.5rem;height:2.5rem;border-radius:50%;background:var(--acs);color:var(--act)}.demo-guide-mark svg{width:1.35rem;height:1.35rem}.demo-guide-head small{color:var(--mu);font-weight:700}.demo-guide-head h2{margin:0;font-size:1.05rem}.demo-guide-close{width:2.5rem;min-height:2.5rem;padding:0;font-size:1.35rem}.demo-guide-progress{height:.3rem;border-radius:99px;background:var(--tile);overflow:hidden}.demo-guide-progress i{display:block;height:100%;background:var(--ac);transition:width .2s}.demo-guide-card>p{margin:0;color:var(--mu);font-size:.9rem;line-height:1.5}.demo-guide-footer,.demo-guide-links{display:flex;gap:.5rem}.demo-guide-footer button,.demo-guide-links button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px}.demo-guide-footer button{flex:1}.demo-guide-footer button svg,.demo-guide-links button svg{width:1.1rem;height:1.1rem}.demo-guide-links button{flex:1;padding:0 .45rem;font-size:.8rem}.reset-demo-overlay{z-index:55}.reset-demo-dialog{width:min(29rem,100%);padding:1.1rem;background:var(--card);border:1px solid var(--bd);border-radius:var(--rl);box-shadow:var(--sh)}.reset-demo-dialog h3{margin:0}.reset-demo-dialog p{margin:0;color:var(--mu)}.reset-confirm{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;font-size:.92rem}.reset-confirm svg{width:1.1rem;height:1.1rem}
 .cbar{display:none;position:fixed;left:.75rem;right:.75rem;bottom:calc(.75rem + env(safe-area-inset-bottom,0px));z-index:10;justify-content:space-between;align-items:center;background:var(--ac)!important;color:var(--onac)!important;border-color:var(--ac)!important;min-height:3.4rem;font-weight:600;box-shadow:var(--sh)}
 
 @media (max-width:999px){
@@ -120,7 +142,10 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 }
 @media (max-width:640px){
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles>:first-child{grid-column:1/-1}.dash{grid-template-columns:1fr}.s2{grid-column:auto}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ov{place-items:end center;padding:0}.mod{width:100%;border-radius:var(--rl) var(--rl) 0 0}.big{font-size:1.4rem}
+  .scan-tools{display:grid;grid-template-columns:minmax(0,1fr) auto}.scan-tools input{grid-column:1/-1}.scan-tools button{width:100%;padding:0 .5rem}.line-tools{gap:.25rem}.line-tools button{padding:0 .45rem}.cart-commands button{font-size:.76rem}
 }
+@media (max-width:999px){.demo-guide-fab{right:.75rem;bottom:calc(4.9rem + env(safe-area-inset-bottom,0px))}.demo-guide-card{right:.5rem;bottom:calc(4.8rem + env(safe-area-inset-bottom,0px));width:calc(100vw - 1rem)}}
+@media (max-width:420px){.demo-guide-card{padding:.8rem}.demo-guide-links{flex-direction:column}.demo-guide-fab{min-width:46px;justify-content:center}.demo-guide-fab span{display:none}}
 @media (min-width:1600px){html{font-size:16.5px}.sell{grid-template-columns:minmax(0,1fr) 28rem}}
 @media (min-width:2200px){html{font-size:20px}}
 
@@ -152,7 +177,8 @@ main{flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .rw{width:min(23rem,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:1rem;padding:.25rem}
 .rok{display:flex;align-items:center;gap:.8rem;background:var(--card);border:1px solid var(--bd);border-radius:var(--rm);padding:.8rem 1rem}
 .rok .i{width:2.4rem;height:2.4rem;padding:.55rem;border-radius:50%;background:var(--ok);color:#fff}.rok small{display:block}
-.paper{position:relative;background:#fbfaf7;color:#1d1b20;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;padding:1.4rem 1.25rem 1.5rem;border-radius:var(--rs) var(--rs) 0 0;display:flex;flex-direction:column;gap:.55rem;margin-bottom:10px}
+.paper{position:relative;width:min(var(--receipt-width,80mm),100%);margin:0 auto 10px;background:#fbfaf7;color:#1d1b20;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;padding:1.4rem 1.25rem 1.5rem;border-radius:var(--rs) var(--rs) 0 0;display:flex;flex-direction:column;gap:.55rem}
+.paper .r>*{min-width:0;overflow-wrap:anywhere}
 .paper::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px;background:linear-gradient(135deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px,linear-gradient(225deg,#fbfaf7 5px,transparent 0) 0 0/10px 10px}
 .paper .c{text-align:center}.paper hr{border:0;border-top:1px dashed #b9b4aa;margin:.2rem 0;width:100%}.paper .r{display:flex;justify-content:space-between;gap:.6rem}
 .paper .m{color:#6c6872;font-size:.75rem}.paper .tt{font-size:1.2rem;font-weight:700}.paper .qr{border-color:#b9b4aa;color:#6c6872}
@@ -202,6 +228,82 @@ select:focus{outline:2px solid var(--act);outline-offset:1px}
   .stock-dash{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:640px){.stock-dash{grid-template-columns:1fr}.big.low{font-size:1.4rem}}
+@media (pointer:coarse){.line-tools button,.seg button,.qty button,.cart-commands button,.cart-total-discount button,.scan-tools button,.report-presets button,.report-tabs button,.supplier-tabs button,.po-actions button{min-height:44px}.qty button{width:44px}.pt{min-height:44px}.pt:hover:not(:disabled){transform:none}}
+.report-page{display:flex;flex-direction:column;gap:1rem;min-height:100%;padding-bottom:1rem}
+.report-heading,.report-toolbar,.report-toolbar>div,.report-actions,.report-presets,.reorder-heading,.supplier-tabs,.po-actions{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.report-heading,.reorder-heading{justify-content:space-between}
+.report-heading h2,.reorder-heading h3{margin:0;font-size:1.35rem}
+.report-actions{justify-content:flex-end}
+.report-presets{padding:.2rem;background:var(--tile);border-radius:var(--rm)}
+.report-presets button,.report-tabs button{min-height:2.5rem;padding:0 .8rem}
+.report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.85rem;align-content:start}
+.report-card{min-width:0;overflow:hidden}
+.report-card.s2{grid-column:span 2}.report-card.s4{grid-column:1/-1}
+.report-kpi{font-size:1.55rem;font-weight:800;line-height:1.25;margin:.35rem 0}
+.report-caption{color:var(--mu);font-size:.82rem}
+.report-card h3{margin:0 0 .3rem;font-size:1rem}
+.report-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.7rem}
+.report-title-row small{color:var(--mu)}
+.sales-chart{width:100%;height:auto;min-height:10rem;display:block;overflow:visible}
+.sales-chart text{fill:var(--mu);font:12px "Plus Jakarta Sans",system-ui,sans-serif}
+.chart-scroll{overflow-x:auto}
+.metric-bars{display:flex;flex-direction:column;gap:.7rem}
+.metric-bar{display:grid;grid-template-columns:minmax(5rem,1fr) minmax(5rem,2fr) auto;align-items:center;gap:.65rem;font-size:.85rem}
+.metric-bar>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.metric-bar-track{height:.55rem;border-radius:99px;background:var(--acs);overflow:hidden}
+.metric-bar-track i{display:block;height:100%;background:var(--ac);border-radius:99px}
+.report-table-wrap{overflow-x:auto}
+.report-table{width:100%;border-collapse:collapse;font-size:.86rem;text-align:left}
+.report-table th{padding:.6rem .5rem;color:var(--mu);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bd);white-space:nowrap}
+.report-table td{padding:.65rem .5rem;border-bottom:1px solid var(--bd);vertical-align:middle}
+.report-table tr:last-child td{border-bottom:0}
+.report-table td.num,.report-table th.num{text-align:right;white-space:nowrap}
+.report-empty{padding:.75rem 0;color:var(--mu)}
+.report-note{padding:.65rem .8rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rs);color:var(--mu);font-size:.82rem}
+.report-tabs{display:flex;gap:.4rem}
+.reorder-layout{display:grid;grid-template-columns:minmax(0,1fr) 2fr;gap:.85rem;align-items:start}
+.supplier-tabs{display:flex;flex-direction:column;align-items:stretch}
+.supplier-tabs button{display:flex;justify-content:space-between;align-items:center;text-align:left;gap:.8rem;min-height:2.8rem}
+.supplier-tabs button span{font-size:.76rem;color:var(--mu)}
+.po-qty{width:5rem;min-height:2.75rem;padding:0 .45rem;text-align:right}
+.po-actions{justify-content:flex-end;margin-top:.8rem}
+.po-summary{display:flex;justify-content:space-between;gap:1rem;padding-top:.7rem;border-top:1px solid var(--bd);font-weight:700}
+.wa-preview{width:min(38rem,100%)}
+.wa-preview textarea{width:100%;min-height:14rem;resize:vertical;font:1rem/1.5 ui-monospace,Menlo,Consolas,monospace;padding:.85rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rs)}
+@media (max-width:900px){.report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.report-card.s4{grid-column:1/-1}.reorder-layout{grid-template-columns:1fr}.supplier-tabs{flex-direction:row;overflow-x:auto}.supplier-tabs button{flex:none;min-width:10rem}}
+@media (max-width:640px){.report-grid{grid-template-columns:1fr}.report-card.s2,.report-card.s4{grid-column:auto}.report-heading{align-items:flex-start;flex-direction:column}.report-actions{width:100%}.report-actions button{flex:1}.report-toolbar{align-items:flex-start;flex-direction:column}.report-presets{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.report-presets button{padding:0 .35rem;font-size:.82rem}.metric-bar{grid-template-columns:minmax(4rem,.8fr) minmax(3rem,1fr) auto;gap:.4rem}.report-table{min-width:34rem}.report-tabs{width:100%}.report-tabs button{flex:1}.po-actions{display:grid;grid-template-columns:1fr 1fr}.po-actions button{min-height:44px}.po-actions .build-po{grid-column:1/-1}}
+.sync-banner{display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;border:1px solid var(--wn);border-radius:var(--rm);background:var(--wns);color:var(--tx)}
+.sync-banner>div{display:flex;flex:1;flex-direction:column;line-height:1.35}.sync-banner small{color:var(--mu)}.sync-banner strong{white-space:nowrap;color:var(--wn)}.sync-banner button{min-height:2.3rem}
+.sync-top{white-space:nowrap}
+.offline-screen{display:flex;flex-direction:column;gap:1rem;max-width:92rem;margin:0 auto;padding-bottom:1rem}
+.offline-heading,.offline-section-head,.offline-actions,.sync-row-title{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.offline-heading h2,.offline-section-head h3{margin:0;font-size:1.35rem}.offline-actions{justify-content:flex-end}
+.offline-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.offline-section-head{margin-bottom:.75rem}.offline-section-head h3{font-size:1.05rem}
+.sync-list{display:flex;flex-direction:column}.sync-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1rem;padding:.85rem 0;border-top:1px solid var(--bd)}
+.sync-main{min-width:0;display:flex;flex-direction:column;gap:.25rem}.sync-row-title{flex-wrap:nowrap}.sync-row-title>div{display:flex;min-width:0;flex-direction:column}.sync-row-title>div small{color:var(--mu)}.sync-row p{margin:0;overflow-wrap:anywhere;font-size:.9rem}
+.sync-status{display:inline-flex;flex:none;align-items:center;padding:.25rem .6rem;border-radius:99px;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.sync-pending{background:rgba(184,137,58,.16);color:var(--gd)}.sync-failed,.mpesa-disputed{background:var(--wns);color:var(--wn)}.sync-syncing{background:var(--acs);color:var(--act)}.sync-synced,.mpesa-matched{background:rgba(29,122,75,.15);color:var(--ok)}.mpesa-pending{background:rgba(184,137,58,.16);color:var(--gd)}
+.sync-recent .sync-row{opacity:.82}
+.statement-import textarea{width:100%;min-height:9rem;resize:vertical;padding:.8rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font:1rem/1.45 ui-monospace,Menlo,Consolas,monospace}
+.statement-import .offline-actions{justify-content:flex-start;margin-top:.7rem}
+.mpesa-reconcile-list{display:flex;flex-direction:column}
+.mpesa-reconcile-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;padding:1rem 0;border-top:1px solid var(--bd)}
+.mpesa-sale-info{display:flex;flex-direction:column;gap:.55rem;min-width:0}.mpesa-sale-info label{display:flex;flex-direction:column;gap:.3rem;color:var(--mu);font-size:.78rem;font-weight:700}.mpesa-sale-info input,.mpesa-sale-info select{color:var(--tx)}
+.mpesa-match-hint{font-size:.82rem;font-weight:700}.mpesa-actions{display:flex;flex-direction:column;gap:.45rem;justify-content:center}.mpesa-actions button{min-height:44px;white-space:nowrap}
+@media (pointer:coarse){.sync-banner button,.offline-actions button,.mpesa-actions button{min-height:44px}}
+@media (max-width:640px){.sync-banner{align-items:flex-start;flex-wrap:wrap}.sync-banner>div{flex-basis:calc(100% - 8rem)}.sync-banner strong{align-self:center}.sync-banner button{width:100%}.offline-heading{align-items:flex-start;flex-direction:column}.offline-actions{width:100%;justify-content:flex-start}.offline-actions button{flex:1}.offline-stats{grid-template-columns:1fr}.offline-section-head{align-items:flex-start}.sync-row{grid-template-columns:1fr;align-items:stretch;gap:.65rem}.sync-row>.row-action{width:100%}.sync-row-title{align-items:flex-start}.sync-row-title>div small{overflow-wrap:anywhere}.mpesa-reconcile-row{grid-template-columns:1fr}.mpesa-actions{display:grid;grid-template-columns:1fr 1fr}.mpesa-actions button:last-child:nth-child(3){grid-column:1/-1}.statement-import .offline-actions{display:grid;grid-template-columns:1fr 1fr}}
+.settings-page{display:flex;flex-direction:column;gap:1rem;max-width:92rem;margin:0 auto;padding-bottom:1rem}
+.settings-heading,.settings-card-head{display:flex;align-items:center;justify-content:space-between;gap:1rem}.settings-heading h2{margin:0;font-size:1.4rem}.settings-card-head{margin-bottom:.85rem}.settings-card-head h3{margin:0;font-size:1.05rem}.settings-card-head small{display:block}
+.settings-language,.settings-choice{display:flex;align-items:center;gap:.45rem}.settings-language{padding:.3rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm)}.settings-language>span{padding:0 .45rem;color:var(--mu);font-size:.8rem;font-weight:700}.settings-language button,.settings-choice button{min-height:2.5rem}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:.85rem}.settings-grid>.card{min-width:0}.settings-preview-card{grid-column:span 2}
+.settings-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.settings-fields label,.settings-field{display:flex;flex-direction:column;gap:.35rem;color:var(--mu);font-size:.8rem;font-weight:700;min-width:0}.settings-fields .wide{grid-column:1/-1}.settings-fields input,.settings-fields textarea{width:100%;color:var(--tx);font-size:1rem}.settings-fields textarea{min-height:4.4rem;padding:.65rem .8rem;resize:vertical;border:1px solid var(--bd);border-radius:var(--rs);background:var(--tile);font:inherit;font-size:max(16px,1rem);line-height:1.4}.settings-fields textarea:focus{outline:2px solid var(--act);outline-offset:1px}.settings-label{font-size:.8rem;font-weight:700}.settings-choice{min-height:2.9rem}.settings-toggle{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:.8rem;min-height:2.8rem;padding:.45rem 0;border-top:1px solid var(--bd)}.settings-stack{display:flex;flex-direction:column;gap:.6rem}.settings-stack .settings-toggle{padding:.25rem 0}.settings-hours{margin-top:.15rem}.settings-hint{font-size:.82rem}.settings-toggle b{font-size:.85rem}
+.hardware-tests{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.7rem}.hardware-tests>div{display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;padding:.75rem;background:var(--tile);border:1px solid var(--bd);border-radius:var(--rm)}.hardware-test-status{display:flex;align-items:center;width:100%;min-height:2.3em}.hardware-test-status small{display:block}.hardware-test-status .loading-skeleton{width:100%;margin:.2rem 0}.hardware-tests button{width:100%;min-height:44px}
+.settings-paper{width:min(var(--receipt-width,80mm),100%);margin:0 auto 10px}.settings-receipt-name,.receipt-shop-name{font-size:1rem}.settings-receipt-footer,.receipt-footer{overflow-wrap:anywhere}.etims-preview,.etims-note,.etims-receipt{display:flex;align-items:center;gap:.7rem}.etims-preview>div:last-child,.etims-note>div:last-child,.etims-receipt-fields{display:flex;flex-direction:column;gap:.15rem;min-width:0}.etims-preview small,.etims-note small,.etims-receipt-fields small{display:block;font-size:.69rem;overflow-wrap:anywhere}.etims-preview .qr,.etims-note .qr,.etims-receipt .qr{flex:none;width:3.5rem;height:3.5rem;text-align:center;font-size:.62rem}.etims-note{padding:.7rem;background:var(--tile);border:1px dashed var(--bd);border-radius:var(--rm)}.etims-receipt-fields{font-size:.68rem}.trading-reminder{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.65rem .8rem;border:1px solid var(--wn);border-radius:var(--rm);background:var(--wns);font-size:.82rem}.trading-reminder span{color:var(--mu);text-align:right}
+.hardware-tests button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}.hardware-tests button svg,.demo-reset-button svg{width:1.1rem;height:1.1rem}.demo-reset-card p{margin:.1rem 0 .8rem;color:var(--mu);font-size:.86rem}.demo-reset-button{display:inline-flex;align-items:center;gap:.45rem;min-height:44px;color:var(--wn);font-weight:700}.sync-status.sync-syncing::after{content:"";display:block;width:1.8rem;height:.35rem;margin-left:.35rem;border-radius:99px;background:linear-gradient(90deg,var(--acs) 20%,var(--act) 48%,var(--acs) 76%);background-size:220% 100%;animation:skeleton-shimmer 1s linear infinite}
+@media (pointer:coarse){.settings-language button,.settings-choice button,.hardware-tests button{min-height:44px}}
+@media (max-width:760px){.settings-grid{grid-template-columns:1fr}.settings-preview-card{grid-column:auto}.settings-heading{align-items:flex-start;flex-direction:column}.settings-language{width:100%}.settings-language button{flex:1}.trading-reminder{align-items:flex-start;flex-direction:column}.trading-reminder span{text-align:left}}
+@media (max-width:420px){.settings-fields{grid-template-columns:1fr}.settings-fields .wide,.settings-toggle{grid-column:auto}.hardware-tests{grid-template-columns:1fr}.etims-preview,.etims-note{align-items:flex-start}.settings-language>span{padding-left:.15rem}}
 </style></head>
 <body><div id="app"></div><div id="tt"></div>
 <script>
@@ -225,6 +327,27 @@ const RAW_CATALOG = [
   ["Nederburg Cabernet","750ml","Wine",1800,6,0,0,2],
   ["Robertson Chardonnay","750ml","Wine",1700,6,0,0,10]
 ];
+
+// Local, product-specific pack shots keep the till usable when offline.
+const PRODUCT_IMAGES = {
+  "Tusker Lager": "assets/products/tusker-lager-500ml.png",
+  "Guinness": "assets/products/guinness-500ml.jpg",
+  "Heineken": "assets/products/heineken-330ml.jpg",
+  "Johnnie Walker Black": "assets/products/johnnie-walker-black-750ml.jpg",
+  "Jameson": "assets/products/jameson-750ml.jpg",
+  "Jack Daniel’s": "assets/products/jack-daniels-750ml.jpg",
+  "Black & White": "assets/products/black-and-white-750ml.jpg",
+  "Chrome Vodka": "assets/products/chrome-vodka-750ml.png",
+  "Smirnoff Red": "assets/products/smirnoff-red-750ml.png",
+  "Gilbey’s Gin": "assets/products/gilbeys-gin-750ml.jpg",
+  "Kenya Cane": "assets/products/kenya-cane-750ml.jpg",
+  "Captain Morgan": "assets/products/captain-morgan-750ml.jpg",
+  "Hennessy VS": "assets/products/hennessy-vs-750ml.png",
+  "Amarula": "assets/products/amarula-750ml.jpg",
+  "Four Cousins Sweet Red": "assets/products/four-cousins-sweet-red-750ml.jpg",
+  "Nederburg Cabernet": "assets/products/nederburg-cabernet-750ml.png",
+  "Robertson Chardonnay": "assets/products/robertson-chardonnay-750ml.png"
+};
 
 // Helper: convert quantity in unit to base units (tot for spirits that sell tots, bottle otherwise)
 function toBaseUnits(p, u, qty) {
@@ -296,19 +419,55 @@ const state = {
   approval: null,
   approvalPin: "",
   approvalError: "",
+  approvalReason: "",
   auditLog: [],
   auditSequence: 0,
   auditFilterUser: "all",
   auditFilterAction: "all",
   auditFilterFrom: "",
   auditFilterTo: "",
+  reportPreset: "7d",
+  reportTab: "reports",
+  language: "en",
+  demoGuide: { open: false, step: 0 },
+  resetDemoConfirm: false,
+  shopSettings: {
+    name: "CELLAR & CO. WINES & SPIRITS",
+    address: "Demo shop · Nairobi, Kenya",
+    kraPin: "P000000000X",
+    vatEnabled: true,
+    receiptHeader: "Wines & Spirits · Retail",
+    receiptFooter: "Thank you · Drink responsibly · 18+",
+    paperWidth: 80,
+    controlUnitId: "CU-NAI-00421",
+    controlUnitSerial: "CU-SN-KE-2048",
+    agePromptEnabled: true,
+    tradingHoursReminder: true,
+    openingTime: "10:00",
+    closingTime: "23:00"
+  },
+  hardwareTests: { printer: "Not tested", drawer: "Not tested" },
+  reorderSupplier: "",
+  purchaseDrafts: {},
+  purchaseDraftSeq: 0,
+  whatsappPreviewSupplier: "",
   cartOpen: false,
   cartDiscountPercent: 0,
+  discountModal: null,
+  heldSales: [],
+  heldSaleSeq: 0,
+  recallOpen: false,
+  receiptMode: "sale",
   selectedCategory: "All",
   searchQuery: "",
   ageVerified: false,
   offline: false,
-  syncCount: 0,
+  mpesaStatementInput: "",
+  mpesaStatementRows: [],
+  mpesaStatementImportedAt: null,
+  mpesaSelectedStatements: {},
+  mpesaDisputeReasons: {},
+  mpesaStatementError: "",
   
   // Stock Management State (Prompt 1)
   stockTab: "overview", // "overview" | "receive" | "take" | "adjust" | "history"
@@ -390,10 +549,12 @@ const state = {
   // Product catalog with per-product baseUnit and dynamically derived bottle stock
   products: RAW_CATALOG.map((a, i) => {
     const tn = a[5];
+    const latestReceipt = [...initialMovements].reverse().find(m => m.productId === i && m.type === "receipt");
     const prod = {
       id: i,
       n: a[0],
       s: a[1],
+      image: PRODUCT_IMAGES[a[0]],
       g: ["Beer","Whisky","Wine"].includes(a[2]) ? a[2] : "Spirits",
       b: a[3],
       k: a[4],
@@ -402,11 +563,8 @@ const state = {
       baseUnit: tn > 0 ? "tot" : "bottle",
       baseUnitsPerBottle: tn > 0 ? tn : 1,
       reorderLevel: ["Captain Morgan", "Amarula"].includes(a[0]) ? 0.5 : 1,
-      preferredSupplier: "East African Breweries Ltd (EABL)",
-      buyPrice: (() => {
-        const receipt = [...initialMovements].reverse().find(m => m.productId === i && m.type === "receipt" && m.buyingPrice);
-        return receipt ? Math.round(receipt.buyingPrice / a[4]) : Math.round(a[3] * 0.65);
-      })(),
+      preferredSupplier: latestReceipt?.supplier || "East African Breweries Ltd (EABL)",
+      buyPrice: latestReceipt?.buyingPrice ? Math.round(latestReceipt.buyingPrice / a[4]) : Math.round(a[3] * 0.65),
       cp: Math.round(a[3] * a[4] * 0.97 / 10) * 10
     };
     Object.defineProperty(prod, "st", {
@@ -467,6 +625,12 @@ function recordStockMovement(m) {
   if (state.zeroStockPolicy === "block" && m.type === "sale" && m.qty < 0 && (currentBase + m.qty) < 0) {
     return false; // Block negative stock
   }
+  if (state.offline) {
+    m.syncTracked = true;
+    m.syncStatus = "pending";
+    m.syncAttempts = 0;
+    m.syncQueuedAt = new Date();
+  }
   state.stockMovements.push(m);
   return true;
 }
@@ -490,42 +654,278 @@ const fac = (p, u) => u == "b" ? 1 : u == "c" ? p.k : (p.tn ? 1 / p.tn : 1);
 const kes = n => "KES " + Math.round(n).toLocaleString("en-KE");
 const esc = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 const fs = n => Number.isInteger(n) ? n : n.toFixed(1);
-const cartSubtotal = () => state.cart.reduce((a, l) => {
+const lineGross = l => {
   const p = state.products.find(x => x.id === l.id);
-  return a + (p ? price(p, l.u) * l.q : 0);
+  return p ? price(p, l.u) * l.q : 0;
+};
+const lineDiscountAmount = l => lineGross(l) - Math.round(lineGross(l) * (1 - (Number(l.discountPercent) || 0) / 100));
+const lineNet = l => lineGross(l) - lineDiscountAmount(l);
+const cartSubtotal = () => state.cart.reduce((a, l) => {
+  return a + lineGross(l);
 }, 0);
-const total = () => Math.round(cartSubtotal() * (1 - (state.cartDiscountPercent || 0) / 100));
+const cartAfterLineDiscounts = () => state.cart.reduce((sum, l) => sum + lineNet(l), 0);
+const cartDiscountAmount = () => cartAfterLineDiscounts() - Math.round(cartAfterLineDiscounts() * (1 - (Number(state.cartDiscountPercent) || 0) / 100));
+const total = () => cartAfterLineDiscounts() - cartDiscountAmount();
+const heldForCurrentTill = () => state.heldSales.filter(held => held.tillNumber === state.till.tillNumber);
 const units = p => p.tn ? ["b", "c", "t"] : ["b", "c"];
 
-function requestCartDiscount() {
-  if (!state.cart.length || state.cartDiscountPercent) return false;
-  const percent = 10;
-  requestOwnerApproval("Discount", `${percent}% off this sale (${kes(cartSubtotal())} before discount)`, () => {
-    state.cartDiscountPercent = percent;
+const MAIN_LABELS = {
+  en: { sell: "Sell", stock: "Stock", products: "Products", till: "Till", reports: "Reports", users: "Users", audit: "Audit log", settings: "Settings", search: "Search or scan barcode · F2", scan: "Scan simulator", reprint: "Reprint last", all: "All", beer: "Beer", whisky: "Whisky", spirits: "Spirits", wine: "Wine", currentSale: "Current sale", back: "Back", billDiscount: "Bill discount", lineDiscount: "Discount", voidLine: "Void line", hold: "Hold sale", recall: "Recall", clear: "Clear", charge: "Charge", verifyAge: "Verify age first", ageCheck: "Age verified", idChecked: "ID checked", ageRequired: "Required to charge", ageOff: "Age prompt off", tillClosed: "Till closed", cash: "Cash", mpesa: "M-Pesa", sendStk: "Send STK push", waitingPin: "Waiting for customer PIN…", completeSale: "Complete sale", cancel: "Cancel", printReceipt: "Print receipt", reprintReceipt: "Reprint receipt", newSale: "New sale", done: "Done", voidSale: "Void sale" },
+  sw: { sell: "Uza", stock: "Hisa", products: "Bidhaa", till: "Kasha", reports: "Ripoti", users: "Watumiaji", audit: "Rekodi za ukaguzi", settings: "Mipangilio", search: "Tafuta au changanua msimbo · F2", scan: "Jaribu kuchanganua", reprint: "Chapisha tena ya mwisho", all: "Zote", beer: "Bia", whisky: "Whisky", spirits: "Vileo", wine: "Mvinyo", currentSale: "Mauzo ya sasa", back: "Rudi", billDiscount: "Punguzo la bili", lineDiscount: "Punguzo", voidLine: "Ondoa bidhaa", hold: "Hifadhi mauzo", recall: "Rejesha", clear: "Futa", charge: "Lipisha", verifyAge: "Thibitisha umri kwanza", ageCheck: "Umri umethibitishwa (18+)", idChecked: "Kitambulisho kimehakikiwa", ageRequired: "Inahitajika kabla ya malipo", ageOff: "Uthibitisho wa umri umezimwa", tillClosed: "Kasha limefungwa", cash: "Pesa taslimu", mpesa: "M-Pesa", sendStk: "Tuma ombi la STK", waitingPin: "Subiri mteja aweke PIN…", completeSale: "Kamilisha mauzo", cancel: "Ghairi", printReceipt: "Chapisha risiti", reprintReceipt: "Chapisha tena risiti", newSale: "Mauzo mapya", done: "Imekamilika", voidSale: "Ghairi mauzo" }
+};
+const label = key => MAIN_LABELS[state.language]?.[key] || MAIN_LABELS.en[key] || key;
+const DEMO_STEPS = [
+  { title: "Find and add products", screen: "sell", target: ".scan-tools", fallback: ".sell", body: "Search by name or barcode, or tap Scan simulator to add a random product. Product tiles are sized for quick touch checkout." },
+  { title: "Work the cart", screen: "sell", target: ".cart", fallback: ".tiles", body: "Change bottle, carton or tot quantities; apply line or bill discounts; void, hold and recall sales. On a phone, open the cart from the bottom bar." },
+  { title: "Charge and print", screen: "sell", target: ".cart .pri", fallback: ".tiles", body: "Verify age, then use Charge or F4. Choose cash or M-Pesa, capture a customer phone, and reprint the last receipt when needed." },
+  { title: "Track stock", screen: "stock", target: ".stock-tabs", fallback: ".stock-tabs", body: "Receive goods, run blind stock takes, post reasoned adjustments and review the movement ledger. Stock levels derive from that ledger." },
+  { title: "Manage products", screen: "products", target: ".product-edit", fallback: ".dash", body: "Edit prices, buying cost, pack sizes and reorder settings. Margin previews and price-change audit records update with the catalog." },
+  { title: "Reconcile the till", screen: "till", target: ".dash .card.s2", fallback: ".dash", body: "Open and close shifts, count cash by denomination, enter M-Pesa received and record any variance reason for owner sign-off." },
+  { title: "Use reports and reorder", screen: "reports", target: ".report-tabs", fallback: ".report-page", body: "Review sales, sellers, margins, shrinkage, voids and discounts. The reorder list drafts supplier orders and previews CSV and WhatsApp text." },
+  { title: "Configure and work offline", screen: "settings", target: ".settings-preview-card", fallback: ".sync-top", body: "Set receipt details, tax and paper width; preview eTIMS placeholders, test simulated hardware and switch button labels. The Sync count opens offline retries; M-Pesa matching is in the Sync queue." }
+];
+
+function emptyState(title, detail, action = "") {
+  return `<div class="empty-state"><span class="empty-state-icon" aria-hidden="true">${IC.empty}</span><b>${esc(title)}</b><small>${esc(detail)}</small>${action}</div>`;
+}
+function loadingSkeleton(lines = 2) {
+  return `<div class="loading-skeleton" aria-label="Loading" role="status">${Array.from({length:lines},(_,index)=>`<i class="skeleton-line skeleton-line-${index+1}"></i>`).join("")}</div>`;
+}
+
+function setLanguage(language) {
+  state.language = language === "sw" ? "sw" : "en";
+  document.documentElement.lang = state.language;
+  render();
+}
+function updateShopSetting(key, value) {
+  state.shopSettings[key] = value;
+  const preview = $("settings-receipt-preview");
+  if (preview) preview.innerHTML = settingsReceiptPreview();
+}
+function setShopSetting(key, value) {
+  state.shopSettings[key] = value;
+  if (key === "agePromptEnabled") state.ageVerified = false;
+  render();
+}
+function outsideTradingHours(now = new Date()) {
+  if (!state.shopSettings.tradingHoursReminder) return false;
+  const toMinutes = value => {
+    const match = /^(\d{2}):(\d{2})$/.exec(value || "");
+    return match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
+  };
+  const opening = toMinutes(state.shopSettings.openingTime);
+  const closing = toMinutes(state.shopSettings.closingTime);
+  if (!Number.isFinite(opening) || !Number.isFinite(closing) || opening === closing) return false;
+  const current = now.getHours() * 60 + now.getMinutes();
+  return opening < closing ? current < opening || current >= closing : current >= closing && current < opening;
+}
+function runHardwareTest(device) {
+  const isPrinter = device === "printer";
+  state.hardwareTests[device] = isPrinter ? "Printing sample receipt…" : "Sending drawer pulse…";
+  render();
+  setTimeout(() => {
+    state.hardwareTests[device] = `${isPrinter ? "Sample receipt printed" : "Drawer pulse sent"} · simulated`;
     render();
-  });
+    toast(isPrinter ? "Printer test simulated" : "Cash drawer test simulated");
+  }, 900);
+}
+function openDemoGuide() {
+  if (state.currentUser?.role !== "owner") {
+    toast("Sign in as the owner to explore the full demo", "info");
+    return false;
+  }
+  state.demoGuide = { open: true, step: 0 };
+  state.view = DEMO_STEPS[0].screen;
+  state.cartOpen = false;
+  render();
   return true;
+}
+function moveDemoGuide(step) {
+  if (!state.demoGuide.open) return false;
+  const next = Math.max(0, Math.min(DEMO_STEPS.length - 1, step));
+  state.demoGuide.step = next;
+  state.view = DEMO_STEPS[next].screen;
+  state.cartOpen = false;
+  render();
+  return true;
+}
+function closeDemoGuide() {
+  state.demoGuide = { open: false, step: 0 };
+  render();
+}
+function updateDemoSpotlight() {
+  if (!state.demoGuide.open) return;
+  const step = DEMO_STEPS[state.demoGuide.step];
+  const isVisible = element => element && element.getClientRects().length && getComputedStyle(element).visibility !== "hidden" && getComputedStyle(element).display !== "none";
+  let target = document.querySelector(step.target);
+  if (!isVisible(target)) target = document.querySelector(step.fallback) || document.querySelector(".sync-top");
+  const spotlight = $("demo-spotlight");
+  if (!target || !spotlight) return;
+  target.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+  const rect = target.getBoundingClientRect();
+  const padding = 5;
+  spotlight.style.left = `${Math.max(4,rect.left-padding)}px`;
+  spotlight.style.top = `${Math.max(4,rect.top-padding)}px`;
+  spotlight.style.width = `${Math.min(window.innerWidth-8,rect.width+padding*2)}px`;
+  spotlight.style.height = `${Math.min(window.innerHeight-8,rect.height+padding*2)}px`;
+}
+function requestDemoReset() {
+  state.resetDemoConfirm = true;
+  render();
+}
+function cancelDemoReset() {
+  state.resetDemoConfirm = false;
+  render();
+}
+function confirmDemoReset() {
+  window.location.reload();
+}
+function demoGuideView() {
+  const step = DEMO_STEPS[state.demoGuide.step];
+  const current = state.demoGuide.step;
+  return `<div id="demo-spotlight" aria-hidden="true"></div><section class="demo-guide-card" role="dialog" aria-modal="false" aria-labelledby="demo-guide-title"><div class="demo-guide-head"><span class="demo-guide-mark">${IC.guide}</span><div><small>Demo guide · Step ${current+1} of ${DEMO_STEPS.length}</small><h2 id="demo-guide-title">${esc(step.title)}</h2></div><button class="demo-guide-close" aria-label="Close demo guide" onclick="closeDemoGuide()">×</button></div><div class="demo-guide-progress" aria-hidden="true"><i style="width:${(current+1)/DEMO_STEPS.length*100}%"></i></div><p>${esc(step.body)}</p>${current===DEMO_STEPS.length-1?`<div class="demo-guide-links"><button onclick="go('sync')">${NAV_ICONS.sync||IC.reset} Sync queue</button><button onclick="go('reconcile')">${IC.phone} M-Pesa matching</button></div>`:""}<div class="demo-guide-footer"><button ${current===0?"disabled":""} onclick="moveDemoGuide(${current-1})">${IC.previous} Previous</button><button class="pri" onclick="${current===DEMO_STEPS.length-1?"closeDemoGuide()":`moveDemoGuide(${current+1})`}">${current===DEMO_STEPS.length-1?"Finish":"Next"} ${current===DEMO_STEPS.length-1?IC.ok:IC.next}</button></div></section>`;
+}
+function demoResetDialog() {
+  return `<div class="ov reset-demo-overlay"><section class="mod reset-demo-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-demo-title"><div class="mh"><div><small>Demo data</small><h3 id="reset-demo-title">Reset demo data?</h3></div><button class="x" aria-label="Close" onclick="cancelDemoReset()">×</button></div><p>This reloads the prototype with its original products, stock, users and sample data. Changes made during this session will be cleared.</p><div class="ft"><button onclick="cancelDemoReset()">Cancel</button><button class="pri reset-confirm" onclick="confirmDemoReset()">${IC.reset} Reset demo data</button></div></section></div>`;
+}
+
+function openDiscountEditor(scope, index = null) {
+  if (!state.cart.length) return false;
+  const line = scope === "line" ? state.cart[index] : null;
+  if (scope === "line" && !line) return false;
+  state.discountModal = {
+    scope,
+    index,
+    percent: String(scope === "bill" ? state.cartDiscountPercent : line.discountPercent || 0)
+  };
+  render();
+  return true;
+}
+function updateDiscountDraft(value) {
+  if (state.discountModal) state.discountModal.percent = value;
+}
+function applyDiscountPercent(scope, index, requestedPercent) {
+  const percent = Number(requestedPercent);
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+    toast("Enter a discount from 0% to 100%");
+    return false;
+  }
+  const line = scope === "line" ? state.cart[index] : null;
+  if (scope === "line" && !line) return false;
+  const previousPercent = Number(scope === "bill" ? state.cartDiscountPercent : line.discountPercent) || 0;
+  const projectedLines = state.cart.map((item, i) => ({ ...item, discountPercent: scope === "line" && i === index ? percent : Number(item.discountPercent) || 0 }));
+  const projectedBeforeBill = projectedLines.reduce((sum, item) => sum + lineNet(item), 0);
+  const projectedBillPercent = scope === "bill" ? percent : Number(state.cartDiscountPercent) || 0;
+  const projectedTotal = Math.round(projectedBeforeBill * (1 - projectedBillPercent / 100));
+  const effectiveDiscountPercent = cartSubtotal() ? (cartSubtotal() - projectedTotal) * 100 / cartSubtotal() : 0;
+  const discountIncreased = percent > previousPercent;
+  const details = scope === "bill"
+    ? `Bill discount ${percent}% (${kes(cartAfterLineDiscounts() - projectedTotal)}) · ${state.cart.map(item => `${item.q} ${U[item.u]} ${state.products.find(product => product.id === item.id)?.n || "item"}`).join(", ")}`
+    : `Line discount ${percent}% · ${line.q} ${U[line.u]} ${state.products.find(p => p.id === line.id)?.n || "item"}`;
+  const apply = () => {
+    if (scope === "bill") state.cartDiscountPercent = percent;
+    else line.discountPercent = percent;
+    state.discountModal = null;
+    render();
+  };
+
+  state.discountModal = null;
+  if (discountIncreased && (percent > 5 || effectiveDiscountPercent > 5)) {
+    requestOwnerApproval("Discount", details, apply);
+  } else {
+    addAuditEntry("Discount", `${details} · applied without owner approval`);
+    apply();
+  }
+  return true;
+}
+function applyDiscount() {
+  const draft = state.discountModal;
+  if (!draft) return false;
+  return applyDiscountPercent(draft.scope, draft.index, draft.percent);
+}
+function requestCartDiscount() {
+  return applyDiscountPercent("bill", null, 10);
 }
 function clearCart() {
   state.cart = [];
   state.cartDiscountPercent = 0;
+  state.ageVerified = false;
   render();
 }
 
-// SVG Icons
-const ICO = {
-  Beer: '<path d="M8 3h8l1 2v14l-1 2H8l-1-2V5z"/><path d="M7 8h10M7 16h10"/>',
-  Wine: '<path d="M10 2h4v4c0 1.5 1.5 2.5 1.5 5v10a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V11c0-2.5 1.5-3.5 1.5-5z"/><path d="M8.5 14h7"/>',
-  Whisky: '<path d="M10 2h4v3l2.2 2.4c.5.5.8 1.2.8 2V21a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9.4c0-.8.3-1.5.8-2L10 5z"/><path d="M7 13h10"/>'
-};
-ICO.Spirits = ICO.Whisky;
-const ico = g => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${ICO[g]||ICO.Whisky}</svg>`;
+function heldSaleSnapshot() {
+  if (!state.cart.length) return false;
+  const held = {
+    id: ++state.heldSaleSeq,
+    cart: state.cart.map(line => ({ ...line })),
+    cartDiscountPercent: state.cartDiscountPercent,
+    total: total(),
+    heldAt: new Date(),
+    heldBy: currentActor(),
+    tillNumber: state.till.tillNumber
+  };
+  state.heldSales.unshift(held);
+  return held;
+}
+function holdSale() {
+  const held = heldSaleSnapshot();
+  if (!held) {
+    toast("Add items before holding a sale");
+    return false;
+  }
+  state.cart = [];
+  state.cartDiscountPercent = 0;
+  state.ageVerified = false;
+  state.cartOpen = false;
+  addAuditEntry("Sale held", `Hold #${held.id} · ${kes(held.total)}`);
+  toast("Sale held");
+  render();
+  return true;
+}
+function openRecall() {
+  state.recallOpen = true;
+  render();
+}
+function recallHeldSale(id) {
+  const held = state.heldSales.find(item => item.id === id && item.tillNumber === state.till.tillNumber);
+  if (!held) return false;
+  if (state.cart.length) {
+    const saved = heldSaleSnapshot();
+    addAuditEntry("Sale held", `Hold #${saved.id} · ${kes(saved.total)} · saved while recalling another sale`);
+  }
+  state.heldSales = state.heldSales.filter(item => item.id !== held.id);
+  state.cart = held.cart.map(line => ({ ...line }));
+  state.cartDiscountPercent = held.cartDiscountPercent || 0;
+  state.ageVerified = false;
+  state.cartOpen = true;
+  state.recallOpen = false;
+  addAuditEntry("Sale recalled", `Hold #${held.id} · ${kes(held.total)}`);
+  render();
+  return true;
+}
+function discardHeldSale(id) {
+  const held = state.heldSales.find(item => item.id === id && item.tillNumber === state.till.tillNumber);
+  if (!held) return false;
+  state.heldSales = state.heldSales.filter(item => item.id !== id);
+  addAuditEntry("Held sale discarded", `Hold #${id} · ${kes(held.total)}`);
+  render();
+  return true;
+}
 
 const sv = p => '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
 const IC = {
   cash: sv('<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>'),
   phone: sv('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>'),
-  ok: sv('<path d="M5 12l5 5 9-10"/>')
+  ok: sv('<path d="M5 12l5 5 9-10"/>'),
+  info: sv('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+  warning: sv('<path d="M12 3 2.8 19a1.4 1.4 0 0 0 1.2 2h16a1.4 1.4 0 0 0 1.2-2L12 3Z"/><path d="M12 9v4M12 17h.01"/>'),
+  guide: sv('<path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/>'),
+  reset: sv('<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>'),
+  printer: sv('<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6zM18 12h.01"/>'),
+  drawer: sv('<path d="M3 8h18v12H3zM3 12h18M7 8V4h10v4M8 16h3"/>'),
+  empty: sv('<path d="M4 7h16l1 13H3L4 7Z"/><path d="M9 7V5a3 3 0 0 1 6 0v2M9 13h6"/>'),
+  previous: sv('<path d="m15 18-6-6 6-6"/>'),
+  next: sv('<path d="m9 18 6-6-6-6"/>')
 };
 
 const NAV_ICONS = {
@@ -534,6 +934,8 @@ const NAV_ICONS = {
   products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13l-7 7L3 10V3h7z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>',
   till: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="15" r="1"/></svg>',
   reports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.4-3"/></svg>',
+  reconcile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="m15 16 1.5 1.5L20 14"/></svg>',
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
@@ -544,7 +946,9 @@ const SCREENS = {
   stock: { id: "stock", label: "Stock", title: "Stock Management", subtitle: "" },
   products: { id: "products", label: "Products", title: "Products & Pricing", subtitle: "Catalog & pack configurations" },
   till: { id: "till", label: "Till", title: "Till & Shifts", subtitle: "Cash & shift reconciliation" },
-  reports: { id: "reports", label: "Reports", title: "Reports & Dashboard", subtitle: "Sales, velocity & shrinkage" },
+  sync: { id: "sync", label: "Sync queue", title: "Sync queue", subtitle: "Local records awaiting upload", nav: false },
+  reconcile: { id: "reconcile", label: "M-Pesa", title: "M-Pesa reconciliation", subtitle: "Offline payments and statement matching", nav: false },
+  reports: { id: "reports", label: "Reports", title: "Reports", subtitle: "Sales, velocity & shrinkage" },
   users: { id: "users", label: "Users", title: "Users & Security", subtitle: "Roles, PINs & audit log" },
   audit: { id: "audit", label: "Audit log", title: "Audit log", subtitle: "Staff actions & approvals" },
   settings: { id: "settings", label: "Settings", title: "Settings & Profile", subtitle: "Shop config & hardware" }
@@ -600,27 +1004,39 @@ function logout() {
   return true;
 }
 function canAccessScreen(screenId) {
-  return state.currentUser?.role === "owner" || screenId === "sell" || screenId === "till";
+  return state.currentUser?.role === "owner" || ["sell", "till", "sync"].includes(screenId);
 }
 function visibleScreens() {
-  return Object.values(SCREENS).filter(screen => canAccessScreen(screen.id));
+  return Object.values(SCREENS).filter(screen => screen.nav !== false && canAccessScreen(screen.id));
 }
 function requestOwnerApproval(action, details, onApproved) {
   if (!state.currentUser) return false;
-  state.approval = { action, details, requestedBy: currentActor(), onApproved };
+  state.approval = { action, details, requestedBy: currentActor(), onApproved, reasonRequired: action.toLowerCase().includes("void") };
   state.approvalPin = "";
   state.approvalError = "";
+  state.approvalReason = "";
   render();
   return false;
+}
+function updateApprovalReason(value) {
+  state.approvalReason = value;
+  const button = $("approve-owner-action");
+  if (button) button.disabled = !!state.approval?.reasonRequired && !value.trim();
 }
 function cancelOwnerApproval() {
   state.approval = null;
   state.approvalPin = "";
   state.approvalError = "";
+  state.approvalReason = "";
   render();
 }
 function approveOwnerAction() {
   if (!state.approval) return false;
+  if (state.approval.reasonRequired && !state.approvalReason.trim()) {
+    state.approvalError = "A reason is required for this void.";
+    render();
+    return false;
+  }
   const owner = state.users.find(candidate => candidate.role === "owner" && candidate.pin === String(state.approvalPin));
   if (!owner) {
     state.approvalError = "Owner PIN is incorrect.";
@@ -631,8 +1047,10 @@ function approveOwnerAction() {
   state.approval = null;
   state.approvalPin = "";
   state.approvalError = "";
-  addAuditEntry(approval.action, `${approval.details} · Approved by ${owner.name}`, approval.requestedBy);
-  approval.onApproved({ owner, requestedBy: approval.requestedBy });
+  const reason = state.approvalReason.trim();
+  state.approvalReason = "";
+  addAuditEntry(approval.action, `${approval.details}${reason ? ` · Reason: ${reason}` : ""} · Approved by ${owner.name}`, approval.requestedBy);
+  approval.onApproved({ owner, requestedBy: approval.requestedBy, reason });
   return true;
 }
 
@@ -657,11 +1075,282 @@ const go = navigateTo;
 // Core Actions
 function tOff() {
   state.offline = !state.offline;
-  if (!state.offline) {
-    toast("Back online · " + state.syncCount + " sale(s) synced");
-    state.syncCount = 0;
+  render();
+  if (state.offline) toast("Offline mode enabled · local changes will queue for sync");
+  else toast(`${syncPendingCount()} record${syncPendingCount()===1?"":"s"} ready to retry`);
+}
+
+function syncQueueItems(includeSynced = false) {
+  const sales = state.sales.filter(sale => sale.syncTracked).map(sale => ({
+    queueId: `sale:${sale.no}`,
+    kind: "Sale",
+    title: sale.no,
+    detail: `${sale.lines.map(line => `${line.n} × ${line.q}`).join(", ")} · ${sale.m === "mpesa" ? `M-Pesa · ${sale.ref} · ${sale.phone||"no phone"}` : "Cash"} · ${kes(sale.t)}`,
+    reference: sale.no,
+    record: sale,
+    at: sale.syncQueuedAt || sale.at,
+    status: sale.syncStatus || "pending"
+  }));
+  const movements = state.stockMovements.filter(movement => movement.syncTracked).map(movement => {
+    const product = state.products.find(item => item.id === movement.productId);
+    return {
+      queueId: `movement:${movement.id}`,
+      kind: "Stock movement",
+      title: product?.n || "Stock item",
+      detail: `${movement.type} · ${movement.note || `${movement.unitQty || Math.abs(movement.qty)} ${U[movement.unit] || "units"}`} · ${movement.ref || "No reference"}`,
+      reference: movement.ref || movement.id,
+      record: movement,
+      at: movement.syncQueuedAt || movement.at,
+      status: movement.syncStatus || "pending"
+    };
+  });
+  return [...sales, ...movements]
+    .filter(item => includeSynced || item.status !== "synced")
+    .sort((a, b) => new Date(b.at) - new Date(a.at));
+}
+
+function syncPendingCount() {
+  return syncQueueItems().length;
+}
+
+function runSyncRetry(items) {
+  const queue = items.filter(item => item.status !== "synced" && item.status !== "syncing");
+  if (!queue.length) {
+    toast("No records are waiting to sync");
+    return false;
+  }
+  queue.forEach(item => {
+    item.record.syncAttempts = (item.record.syncAttempts || 0) + 1;
+    item.record.syncLastAttemptAt = new Date();
+    item.record.syncError = "";
+  });
+  if (state.offline) {
+    queue.forEach(item => {
+      item.record.syncStatus = "failed";
+      item.record.syncError = "Device is offline. Reconnect and retry.";
+    });
+    render();
+    toast(`${queue.length} record${queue.length===1?"":"s"} could not sync while offline`);
+    return false;
+  }
+  queue.forEach(item => { item.record.syncStatus = "syncing"; });
+  render();
+  setTimeout(() => {
+    let synced = 0;
+    queue.forEach(item => {
+      if (item.record.syncStatus !== "syncing") return;
+      if (state.offline) {
+        item.record.syncStatus = "failed";
+        item.record.syncError = "Connection dropped during retry.";
+      } else {
+        item.record.syncStatus = "synced";
+        item.record.syncError = "";
+        item.record.syncedAt = new Date();
+        synced++;
+      }
+    });
+    render();
+    toast(`${synced} record${synced===1?"":"s"} synced${state.offline ? " · connection lost" : ""}`);
+  }, 750);
+  return true;
+}
+
+function retrySyncItem(queueId) {
+  const item = syncQueueItems(true).find(candidate => candidate.queueId === queueId);
+  if (!item) return false;
+  return runSyncRetry([item]);
+}
+
+function retryAllSyncItems() {
+  return runSyncRetry(syncQueueItems());
+}
+
+function syncQueueView() {
+  const pending = syncQueueItems();
+  const recent = syncQueueItems(true).filter(item => item.status === "synced").slice(0, 8);
+  const itemRow = item => `<article class="sync-row"><div class="sync-main"><div class="sync-row-title"><div><b>${esc(item.kind)} · ${esc(item.title)}</b><small>${new Date(item.at).toLocaleString("en-KE")} · ${esc(item.reference)}</small></div><span class="sync-status sync-${esc(item.status)}">${item.status === "syncing" ? "Syncing" : item.status === "failed" ? "Failed" : item.status === "synced" ? "Synced" : "Pending"}</span></div><p>${esc(item.detail)}</p>${item.record.syncError ? `<small class="low">${esc(item.record.syncError)}</small>` : ""}<small class="mu">${item.record.syncAttempts || 0} retry attempt${item.record.syncAttempts===1?"":"s"}${item.record.syncLastAttemptAt ? ` · Last tried ${new Date(item.record.syncLastAttemptAt).toLocaleTimeString("en-KE")}` : ""}</small></div><button class="row-action" ${item.status === "syncing" || item.status === "synced" ? "disabled" : ""} onclick="retrySyncItem('${esc(item.queueId)}')">${item.status === "synced" ? "Synced" : "Retry"}</button></article>`;
+  return `<div class="offline-screen"><div class="offline-heading"><div><h2>Sync queue</h2><small class="mu">Offline sales and stock movements saved on this device</small></div><div class="offline-actions"><span class="badge ${state.offline?"b-adj":"b-rec"}">${state.offline?"Offline":"Online"}</span><button onclick="tOff()">${state.offline?"Go online":"Simulate offline"}</button>${state.currentUser.role === "owner" ? `<button onclick="go('reconcile')">M-Pesa reconciliation</button>` : ""}</div></div>
+<div class="offline-stats"><section class="card"><h4>Waiting to sync</h4><div class="report-kpi ${pending.length?"low":"ok"}">${pending.length}</div><small>${pending.filter(item=>item.status==="failed").length} failed · ${pending.filter(item=>item.status==="syncing").length} in progress</small></section><section class="card"><h4>Offline M-Pesa</h4><div class="report-kpi">${pendingMpesaReconciliationCount()}</div><small>Payments awaiting owner review</small></section></div>
+<section class="card"><div class="offline-section-head"><div><h3>Queued records</h3><small class="mu">Each sale and stock movement retries independently</small></div><button class="pri" ${pending.length?"":"disabled"} onclick="retryAllSyncItems()">Retry all</button></div><div class="sync-list">${pending.map(itemRow).join("")||emptyState("Sync queue is clear.","Sales and stock changes recorded while offline will appear here.")}</div></section>
+<section class="card"><h3>Recently synced</h3><small class="mu">Latest completed retries from this session</small><div class="sync-list sync-recent">${recent.map(itemRow).join("")||emptyState("No synced records yet.","Completed retries from this session will appear here.")}</div></section></div>`;
+}
+
+function offlineMpesaSales() {
+  return state.sales.filter(sale => sale.m === "mpesa" && sale.pend);
+}
+
+function pendingMpesaReconciliationCount() {
+  return offlineMpesaSales().filter(sale => (sale.reconciliationStatus || "pending") === "pending").length;
+}
+
+function normalizeMpesaCode(code) {
+  return String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function parseStatementAmount(amount) {
+  if (!String(amount ?? "").trim()) return NaN;
+  const value = String(amount || "").replace(/,/g, "").replace(/[^0-9.-]/g, "");
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function splitStatementRow(line, delimiter) {
+  const fields = [];
+  let value = "", quoted = false;
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+    if (character === '"' && line[index + 1] === '"' && quoted) {
+      value += '"';
+      index++;
+    } else if (character === '"') quoted = !quoted;
+    else if (character === delimiter && !quoted) {
+      fields.push(value.trim());
+      value = "";
+    } else value += character;
+  }
+  fields.push(value.trim());
+  return fields;
+}
+
+function importMpesaStatement() {
+  const lines = state.mpesaStatementInput.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (!lines.length) {
+    state.mpesaStatementError = "Paste statement rows before importing.";
+    render();
+    return false;
+  }
+  const delimiter = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+  const firstRow = splitStatementRow(lines[0], delimiter).map(value => value.toLowerCase());
+  const codeIndex = firstRow.findIndex(value => /transaction|receipt|reference|\bcode\b/.test(value));
+  const amountIndex = firstRow.findIndex(value => /amount|paid.?in|credit/.test(value));
+  const hasHeader = codeIndex >= 0 && amountIndex >= 0;
+  const startAt = hasHeader ? 1 : 0;
+  const parsedRows = [];
+  for (let index = startAt; index < lines.length; index++) {
+    const fields = splitStatementRow(lines[index], delimiter);
+    const code = normalizeMpesaCode(fields[hasHeader ? codeIndex : 0]);
+    const amount = parseStatementAmount(fields[hasHeader ? amountIndex : 1]);
+    if (code.length < 8 || code.length > 12 || !Number.isFinite(amount) || amount <= 0) continue;
+    const id = `statement:${code}:${Math.round(amount)}`;
+    parsedRows.push({ id, code, amount, sourceLine: lines[index], importedAt: new Date() });
+  }
+  if (!parsedRows.length) {
+    state.mpesaStatementError = "No valid rows found. Use columns for transaction code and amount.";
+    render();
+    return false;
+  }
+  const currentRows = new Map(state.mpesaStatementRows.map(row => [row.id, row]));
+  parsedRows.forEach(row => { if (!currentRows.has(row.id)) currentRows.set(row.id, row); });
+  state.mpesaStatementRows = [...currentRows.values()];
+  state.mpesaStatementImportedAt = new Date();
+  state.mpesaStatementError = "";
+
+  const used = new Set(offlineMpesaSales().filter(sale => sale.reconciliationStatus === "matched").map(sale => sale.reconciliationStatementId));
+  offlineMpesaSales().forEach(sale => {
+    if (sale.reconciliationStatus === "matched") {
+      state.mpesaSelectedStatements[sale.no] = sale.reconciliationStatementId;
+      return;
+    }
+    const existingSelection = state.mpesaSelectedStatements[sale.no];
+    if (existingSelection && state.mpesaStatementRows.some(row => row.id === existingSelection) && !used.has(existingSelection)) {
+      used.add(existingSelection);
+      return;
+    }
+    const match = state.mpesaStatementRows.find(row => row.code === normalizeMpesaCode(sale.ref) && !used.has(row.id));
+    state.mpesaSelectedStatements[sale.no] = match?.id || "";
+    if (match) used.add(match.id);
+  });
+  render();
+  toast(`${parsedRows.length} statement row${parsedRows.length===1?"":"s"} imported`);
+  return true;
+}
+
+function selectableStatementRows(sale) {
+  const used = new Set(offlineMpesaSales().filter(item => item.no !== sale.no && item.reconciliationStatus === "matched").map(item => item.reconciliationStatementId));
+  return state.mpesaStatementRows.filter(row => !used.has(row.id) || row.id === sale.reconciliationStatementId || row.id === state.mpesaSelectedStatements[sale.no]);
+}
+
+function selectMpesaStatement(saleNo, statementId) {
+  state.mpesaSelectedStatements[saleNo] = statementId;
+  render();
+}
+
+function setMpesaReconciliation(saleNo, status) {
+  if (state.currentUser?.role !== "owner") return false;
+  const sale = offlineMpesaSales().find(item => item.no === saleNo);
+  if (!sale) return false;
+  if (status === "matched") {
+    const statementId = state.mpesaSelectedStatements[saleNo] || sale.reconciliationStatementId;
+    const row = state.mpesaStatementRows.find(item => item.id === statementId);
+    if (!row) {
+      toast("Choose a statement row before matching");
+      return false;
+    }
+    const usedByAnotherSale = offlineMpesaSales().some(item => item.no !== saleNo && item.reconciliationStatus === "matched" && item.reconciliationStatementId === row.id);
+    if (usedByAnotherSale) {
+      toast("That statement row is already matched to another sale");
+      return false;
+    }
+    if (row.code !== normalizeMpesaCode(sale.ref) || Math.round(row.amount) !== Math.round(sale.t)) {
+      toast("Code and amount must both match. Mark disputed if they differ.");
+      return false;
+    }
+    sale.reconciliationStatus = "matched";
+    sale.reconciliationStatementId = row.id;
+    sale.reconciliationReason = "";
+    state.mpesaDisputeReasons[saleNo] = "";
+    sale.reconciledAt = new Date();
+    sale.reconciledBy = state.currentUser.name;
+    addAuditEntry("M-Pesa matched", `${sale.no} · ${row.code} · ${kes(row.amount)}`);
+  } else if (status === "disputed") {
+    sale.reconciliationStatus = "disputed";
+    sale.reconciliationStatementId = state.mpesaSelectedStatements[saleNo] || "";
+    sale.reconciliationReason = (state.mpesaDisputeReasons[saleNo] || "").trim() || "Owner review required";
+    sale.reconciledAt = new Date();
+    sale.reconciledBy = state.currentUser.name;
+    addAuditEntry("M-Pesa disputed", `${sale.no} · ${sale.ref} · ${sale.reconciliationReason}`);
+  } else {
+    sale.reconciliationStatus = "pending";
+    sale.reconciliationStatementId = "";
+    sale.reconciliationReason = "";
+    state.mpesaDisputeReasons[saleNo] = "";
+    sale.reconciledAt = null;
+    sale.reconciledBy = "";
+    addAuditEntry("M-Pesa reopened", `${sale.no} · ${sale.ref}`);
   }
   render();
+  return true;
+}
+
+function mpesaReconciliationView() {
+  const sales = offlineMpesaSales().slice().sort((a,b) => new Date(b.at)-new Date(a.at));
+  const statusLabel = status => status === "matched" ? "Matched" : status === "disputed" ? "Disputed" : "Pending";
+  const usedRows = new Map(offlineMpesaSales().filter(sale=>sale.reconciliationStatementId).map(sale=>[sale.reconciliationStatementId,sale]));
+  const saleRow = sale => {
+    const status = sale.reconciliationStatus || "pending";
+    const selectedId = state.mpesaSelectedStatements[sale.no] || sale.reconciliationStatementId || "";
+    const row = state.mpesaStatementRows.find(item => item.id === selectedId);
+    const options = selectableStatementRows(sale);
+    const codeMatches = row && row.code === normalizeMpesaCode(sale.ref);
+    const amountMatches = row && Math.round(row.amount) === Math.round(sale.t);
+    return `<article class="mpesa-reconcile-row">
+      <div class="mpesa-sale-info">
+        <div class="sync-row-title"><div><b>${esc(sale.no)} · ${kes(sale.t)}</b><small>${esc(sale.ref)} · ${esc(sale.phone||"No phone")} · ${new Date(sale.at).toLocaleString("en-KE")}</small></div><span class="sync-status mpesa-${status}">${statusLabel(status)}</span></div>
+        ${sale.reconciliationReason?`<small class="low">${esc(sale.reconciliationReason)}</small>`:`<small class="mu">${status==="matched"?`Matched by ${esc(sale.reconciledBy||"Owner")} · ${sale.reconciledAt?new Date(sale.reconciledAt).toLocaleString("en-KE"):""}`:"Select a statement row to compare code and amount."}</small>`}
+        <label class="fl">Statement entry<select aria-label="Statement entry for ${esc(sale.no)}" ${status==="matched"?"disabled":""} onchange="selectMpesaStatement('${esc(sale.no)}',this.value)"><option value="">Choose a pasted row</option>${options.map(option=>`<option value="${esc(option.id)}" ${selectedId===option.id?"selected":""}>${esc(option.code)} · ${kes(option.amount)}</option>`).join("")}</select></label>
+        ${row?`<div class="mpesa-match-hint ${codeMatches&&amountMatches?"ok":"low"}">Code ${codeMatches?"matches":"differs"} · Amount ${amountMatches?"matches":"differs"}</div>`:""}
+        <label class="fl">Dispute note <input value="${esc(state.mpesaDisputeReasons[sale.no]||sale.reconciliationReason||"")}" placeholder="Optional reason for dispute" oninput="state.mpesaDisputeReasons['${esc(sale.no)}']=this.value"></label>
+      </div>
+      <div class="mpesa-actions"><button class="pri" ${status==="matched"?"disabled":""} onclick="setMpesaReconciliation('${esc(sale.no)}','matched')">${status==="matched"?"Matched":"Mark matched"}</button><button class="line-void" onclick="setMpesaReconciliation('${esc(sale.no)}','disputed')">Mark disputed</button>${status!=="pending"?`<button onclick="setMpesaReconciliation('${esc(sale.no)}','pending')">Reopen</button>`:""}</div>
+    </article>`;
+  };
+  return `<div class="offline-screen reconcile-screen">
+    <div class="offline-heading"><div><h2>M-Pesa reconciliation</h2><small class="mu">Compare offline payment codes with a pasted mock statement</small></div><div class="offline-actions"><button onclick="go('till')">Till</button><span class="badge b-open">Owner review</span></div></div>
+    <div class="report-note">Paste rows with transaction code and amount. Accepted layout: <b>Code, Amount, Phone, Date</b> (CSV, tab-delimited or semicolon-delimited).</div>
+    <section class="card statement-import"><div class="offline-section-head"><div><h3>Mock statement</h3><small class="mu">${state.mpesaStatementRows.length} imported row${state.mpesaStatementRows.length===1?"":"s"}${state.mpesaStatementImportedAt?` · last pasted ${state.mpesaStatementImportedAt.toLocaleString("en-KE")}`:""}</small></div></div><textarea aria-label="Paste M-Pesa statement" placeholder="Code,Amount,Phone,Date\nQX7AB12C,1200,0712345678,2026-10-18" oninput="state.mpesaStatementInput=this.value">${esc(state.mpesaStatementInput)}</textarea>${state.mpesaStatementError?`<p class="login-error" role="alert">${esc(state.mpesaStatementError)}</p>`:""}<div class="offline-actions"><button class="pri" onclick="importMpesaStatement()">Import statement rows</button><button onclick="state.mpesaStatementInput='';state.mpesaStatementError='';render()">Clear text</button></div></section>
+    <section class="card"><div class="offline-section-head"><div><h3>Offline M-Pesa sales</h3><small class="mu">${pendingMpesaReconciliationCount()} pending · ${sales.filter(sale=>sale.reconciliationStatus==="matched").length} matched · ${sales.filter(sale=>sale.reconciliationStatus==="disputed").length} disputed</small></div></div>${sales.length?`<div class="mpesa-reconcile-list">${sales.map(saleRow).join("")}</div>`:emptyState("No offline M-Pesa sales yet.","Take an M-Pesa payment while offline and enter its confirmation code here.")}</section>
+    <section class="card"><h3>Pasted statement rows</h3><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Transaction code</th><th class="num">Amount</th><th>Match status</th></tr></thead><tbody>${state.mpesaStatementRows.map(row=>{const used=usedRows.get(row.id);return `<tr><td>${esc(row.code)}</td><td class="num">${kes(row.amount)}</td><td>${used?`${used.reconciliationStatus==="disputed"?"Disputed on":"Matched to"} ${esc(used.no)}`:"Available"}</td></tr>`;}).join("")||`<tr><td colspan="3" class="report-empty">No statement rows imported.</td></tr>`}</tbody></table></div></section>
+  </div>`;
 }
 
 function tTheme() {
@@ -670,8 +1359,12 @@ function tTheme() {
   d.dataset.theme = cur == "dark" ? "light" : "dark";
 }
 
-function toast(m) {
-  $("tt").innerHTML = `<div class="toast">${m}</div>`;
+function toast(m, kind = "") {
+  const message = String(m);
+  const inferred = /\b(saved|posted|received|held|prepared|copied|downloaded|synced|imported|voided|matched|reconciled|simulated|scanned|approved|opened|closed|created|updated|added|completed|printed)\b/i.test(message) ? "success" : /^(Enter |Invalid |Cannot |No |Item is out|Sale blocked|Stock movement blocked|Adjustment blocked|Owner access required|Choose a |That statement|Code and amount|Finish or cancel|A reason is required|A cashier discount)/i.test(message) ? "error" : "info";
+  const type = kind || inferred;
+  const icon = type === "success" ? IC.ok : type === "error" ? IC.warning : IC.info;
+  $("tt").innerHTML = `<div class="toast toast-${type}" role="${type === "error" ? "alert" : "status"}" aria-live="${type === "error" ? "assertive" : "polite"}"><span class="toast-icon" aria-hidden="true">${icon}</span><span>${esc(message)}</span></div>`;
   setTimeout(() => $("tt").innerHTML = "", 2200);
 }
 
@@ -689,8 +1382,8 @@ function add(id) {
     toast("Cannot add: exceeds available stock");
     return false;
   }
-  const l = state.cart.find(x => x.id == id && x.u == "b");
-  l ? l.q++ : state.cart.push({ id, u: "b", q: 1 });
+  const l = state.cart.find(x => x.id == id && x.u == "b" && !(Number(x.discountPercent) > 0));
+  l ? l.q++ : state.cart.push({ id, u: "b", q: 1, discountPercent: 0 });
   render();
   return true;
 }
@@ -711,6 +1404,11 @@ function qty(i, d) {
   }
   l.q += d;
   if (l.q < 1) state.cart.splice(i, 1);
+  if (!state.cart.length) {
+    state.cartDiscountPercent = 0;
+    state.ageVerified = false;
+    state.cartOpen = false;
+  }
   render();
   return true;
 }
@@ -730,6 +1428,8 @@ function unit(i, u) {
   l.u = u;
   const j = state.cart.findIndex((x, k) => k != i && x.id == l.id && x.u == u);
   if (j > -1) {
+    const target = state.cart[j];
+    target.discountPercent = ((target.discountPercent || 0) * target.q + (l.discountPercent || 0) * l.q) / (target.q + l.q);
     state.cart[j].q += l.q;
     state.cart.splice(i, 1);
   }
@@ -761,6 +1461,36 @@ function scan(e) {
     render();
     keep("q");
   }
+}
+
+function simulateScan() {
+  const pool = state.products.filter(product => state.zeroStockPolicy !== "block" || getProductBaseUnits(product.id) > 0);
+  if (!pool.length) {
+    toast("No products available to scan");
+    return false;
+  }
+  const product = pool[Math.floor(Math.random() * pool.length)];
+  state.searchQuery = "";
+  const added = add(product.id);
+  if (added) toast(`Scanned · ${product.n}`);
+  return added;
+}
+
+function reprintLastSale() {
+  const sale = [...state.sales].reverse().find(item => item.tillNumber === state.till.tillNumber);
+  if (!sale) {
+    toast("No sale to reprint");
+    return false;
+  }
+  state.receipt = sale;
+  state.receiptMode = "reprint";
+  render();
+  return true;
+}
+function closeReceipt() {
+  state.receipt = null;
+  state.receiptMode = "sale";
+  render();
 }
 
 function upd(k, v, id) {
@@ -918,12 +1648,21 @@ function charge() {
     toast("Sale blocked: open the till before charging");
     return false;
   }
+  if (!state.cart.length || (state.shopSettings.agePromptEnabled && !state.ageVerified)) {
+    toast(state.cart.length ? "Confirm the 18+ age check before charging" : "Add items before charging");
+    return false;
+  }
+  if (outsideTradingHours()) toast(`Trading hours reminder · ${state.shopSettings.openingTime}–${state.shopSettings.closingTime}`);
   state.payment = { m: "cash", tend: total(), phone: "0712 345 678", ref: "", st: "idle" };
   render();
   return true;
 }
 
 function stk() {
+  if (!String(state.payment?.phone || "").trim()) {
+    toast("Enter the customer phone number first");
+    return false;
+  }
   state.payment.st = "wait";
   render();
   setTimeout(() => {
@@ -944,6 +1683,14 @@ function finish() {
   }
   const t = total();
   const d = state.payment;
+  if (!d) {
+    toast("Start checkout before completing the sale");
+    return false;
+  }
+  if (d.m === "mpesa" && !String(d.phone || "").trim()) {
+    toast("Enter the customer phone number for the M-Pesa receipt");
+    return false;
+  }
   const subtotal = cartSubtotal();
 
   // Validate all lines to ensure negative stock is blocked
@@ -962,19 +1709,31 @@ function finish() {
     no: "INV-" + String(++state.invoiceSeq).padStart(6, "0"),
     lines: state.cart.map(l => {
       const p = state.products.find(x => x.id === l.id);
-      return { n: p.n, s: p.s, u: l.u, q: l.q, pr: price(p, l.u) };
+      const gross = price(p, l.u) * l.q;
+      const lineDiscount = gross - Math.round(gross * (1 - (Number(l.discountPercent) || 0) / 100));
+      return { productId: p.id, category: p.g, n: p.n, s: p.s, u: l.u, q: l.q, pr: price(p, l.u), discountPercent: Number(l.discountPercent) || 0, gross, lineDiscount, net: gross - lineDiscount };
     }),
     subtotal,
+    lineDiscountAmount: subtotal - cartAfterLineDiscounts(),
     discountPercent: state.cartDiscountPercent,
+    billDiscountAmount: cartDiscountAmount(),
     discountAmount: subtotal - t,
     t,
     m: d.m,
     ref: d.ref,
     tend: d.tend,
+    phone: d.m === "mpesa" ? String(d.phone || "").trim() : "",
+    receiptSettings: { ...state.shopSettings },
     pend: d.m == "mpesa" && state.offline,
     user: currentActor(),
     tillNumber: state.till.tillNumber,
     voided: false,
+    syncTracked: state.offline,
+    syncStatus: state.offline ? "pending" : "synced",
+    syncAttempts: 0,
+    reconciliationStatus: d.m === "mpesa" && state.offline ? "pending" : "not-required",
+    reconciliationStatementId: "",
+    reconciliationReason: "",
     at: new Date()
   };
 
@@ -1001,10 +1760,10 @@ function finish() {
     }
   }
 
-  if (state.offline) state.syncCount++;
   state.sales.push(s);
   addAuditEntry("Sale", `${s.no} · ${kes(s.t)} · ${s.m === "cash" ? "Cash" : "M-Pesa"}`);
   state.receipt = s;
+  state.receiptMode = "sale";
   state.payment = null;
   state.cart = [];
   state.cartDiscountPercent = 0;
@@ -1013,23 +1772,51 @@ function finish() {
   return true;
 }
 
+function requestLineVoid(index) {
+  const line = state.cart[index];
+  if (!line) return false;
+  const p = state.products.find(product => product.id === line.id);
+  const details = `${line.q} ${U[line.u]} ${p?.n || "item"} removed from current sale`;
+  requestOwnerApproval("Void line", details, () => {
+    const current = state.cart[index];
+    if (!current || current.id !== line.id || current.u !== line.u) return;
+    state.cart.splice(index, 1);
+    if (!state.cart.length) {
+      state.cartDiscountPercent = 0;
+      state.ageVerified = false;
+      state.cartOpen = false;
+    }
+    render();
+    toast("Line voided");
+  });
+  return true;
+}
+
 function requestSaleVoid(saleNo = state.receipt?.no) {
   const sale = state.sales.find(candidate => candidate.no === saleNo);
   if (!sale || sale.voided) return false;
-  requestOwnerApproval("Void sale", `${sale.no} · ${kes(sale.t)} · ${sale.lines.map(line => line.n).join(", ")}`, ({ requestedBy }) => {
+  requestOwnerApproval("Void sale", `${sale.no} · ${kes(sale.t)} · ${sale.lines.map(line => line.n).join(", ")}`, ({ requestedBy, reason, owner }) => {
     if (sale.voided) return;
     for (const line of sale.lines) {
-      const product = state.products.find(candidate => candidate.n === line.n);
+      const product = state.products.find(candidate => candidate.id === line.productId) || state.products.find(candidate => candidate.n === line.n);
       if (!product) continue;
       recordStockMovement({
         id: "mov_" + (++state.movementSeq), productId: product.id, type: "void",
         qty: toBaseUnits(product, line.u, line.q), unit: line.u, unitQty: line.q,
-        ref: sale.no, note: `Voided sale ${sale.no}`, user: requestedBy, at: new Date()
+        ref: sale.no, note: `Voided sale ${sale.no} · ${reason}`, user: requestedBy, at: new Date()
       });
     }
     sale.voided = true;
     sale.voidedAt = new Date();
-    sale.voidedBy = requestedBy;
+    sale.voidedBy = owner.name;
+    sale.voidRequestedBy = requestedBy;
+    sale.voidReason = reason;
+    if (state.offline) {
+      sale.syncTracked = true;
+      sale.syncStatus = "pending";
+      sale.syncAttempts = 0;
+      sale.syncQueuedAt = new Date();
+    }
     state.receipt = sale;
     render();
     toast(`${sale.no} voided · stock restored`);
@@ -1045,41 +1832,414 @@ function sell() {
   const n = state.cart.reduce((a, l) => a + l.q, 0);
   const sum = state.sales.filter(s => !s.voided).reduce((a, s) => a + s.t, 0);
   const tillOpen = state.till.status === "open";
+  const lastSale = [...state.sales].reverse().find(sale => sale.tillNumber === state.till.tillNumber);
+  const heldCount = heldForCurrentTill().length;
+  const discountAmount = cartSubtotal() - t;
+  const agePromptEnabled = state.shopSettings.agePromptEnabled;
+  const ageReady = !agePromptEnabled || state.ageVerified;
+  const outsideHours = outsideTradingHours();
 
   return `<div class="sell"><div class="tiles">
-<div class="card t"><h4>Age verified (18+)</h4><div style="display:flex;align-items:center;justify-content:space-between"><span class="${state.ageVerified?"":"low"}">${state.ageVerified?"ID checked":"Required to charge"}</span><button class="sw ${state.ageVerified?"on":""}" aria-label="Age verified" onclick="state.ageVerified=!state.ageVerified;render()"><i></i></button></div></div>
+<div class="card t"><h4>${label("ageCheck")}</h4><div style="display:flex;align-items:center;justify-content:space-between"><span class="${agePromptEnabled&&!state.ageVerified?"low":""}">${agePromptEnabled?(state.ageVerified?label("idChecked"):label("ageRequired")):label("ageOff")}</span>${agePromptEnabled?`<button class="sw ${state.ageVerified?"on":""}" aria-label="${label("ageCheck")}" onclick="state.ageVerified=!state.ageVerified;render()"><i></i></button>`:""}</div></div>
 <div class="card t"><h4>Till</h4><div class="big ${tillOpen?"ok":"low"}">${tillOpen?"Open":"Closed"}</div><small>${tillOpen?`Float ${kes(state.till.float)} · ${state.till.cashier}`:"Open the till before charging"}</small></div>
 <div class="card t"><h4>Today’s sales</h4><div class="big">${kes(base.tot+sum)}</div><small>${base.n+state.sales.filter(s=>!s.voided).length} transactions</small></div></div>
-<section class="card prod"><input id="q" placeholder="Scan barcode or search products…" value="${state.searchQuery}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off">
-<div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${c}</button>`).join("")}</div>
-<div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0&&state.zeroStockPolicy==="block"?"disabled":""} onclick="add(${p.id})"><span class="ph">${ico(p.g)}</span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${isLowStock(p)?"low":""}">${p.st<=0?"Out of stock":isLowStock(p)?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||`<p class="mu">No products match.</p>`}</div></section>
-<aside class="card cart ${open?"open":""}"><div class="chead"><h4>Current sale</h4><button class="cclose" onclick="state.cartOpen=false;render()">Back</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th">${ico(p.g)}</span><div><b>${p.n}</b><br><small>${p.s} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u=="c"?" ("+p.k+" btl)":""}</small></div><div class="lp">${kes(price(p,l.u)*l.q)}</div><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><div class="qty"><button aria-label="Less" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More" onclick="qty(${i},1)">+</button></div></div>`}).join("")||`<div class="empty">Scan or tap a product<br>to start a sale</div>`}</div>
-${state.cart.length&&!state.cartDiscountPercent?`<button class="ghost discount-action" onclick="requestCartDiscount()">Request 10% discount · Owner approval</button>`:""}<div class="tot"><div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div>${state.cartDiscountPercent?`<div class="mu"><span>Owner-approved discount (${state.cartDiscountPercent}%)</span><span>− ${kes(cartSubtotal()-t)}</span></div>`:""}<div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
-<div class="ft"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="clearCart()">Clear</button><button class="pri" style="flex:3" ${state.cart.length&&state.ageVerified&&tillOpen?"":"disabled"} onclick="charge()">${!tillOpen?"Till closed":state.cart.length&&!state.ageVerified?"Verify age first":"Charge "+kes(t)}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:""}</div>`;
+<section class="card prod">${outsideHours?`<div class="trading-reminder" role="status"><b>Trading hours reminder</b><span>Configured hours are ${esc(state.shopSettings.openingTime)}–${esc(state.shopSettings.closingTime)}. Check with the owner before continuing.</span></div>`:""}<div class="scan-tools"><input id="q" placeholder="${label("search")}" title="Press F2 to focus search" value="${esc(state.searchQuery)}" oninput="search(this.value)" onkeydown="scan(event)" autocomplete="off"><button onclick="simulateScan()" title="Add a randomly selected product">${label("scan")}</button>${lastSale?`<button onclick="reprintLastSale()" title="Open the most recent receipt for reprinting">${label("reprint")}</button>`:""}</div>
+<div class="chips">${["All","Beer","Whisky","Spirits","Wine"].map(c=>`<button class="${state.selectedCategory==c?"on":""}" onclick="state.selectedCategory='${c}';render()">${label(c.toLowerCase())}</button>`).join("")}</div>
+<div class="grid">${f.map(p=>`<button class="pt" ${p.st<=0&&state.zeroStockPolicy==="block"?"disabled":""} onclick="add(${p.id})"><span class="ph"><img src="${esc(p.image)}" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><b>${p.n}</b><small>${p.s}</small><span class="pr">${kes(p.b)}</span><small class="${isLowStock(p)?"low":""}">${p.st<=0?"Out of stock":isLowStock(p)?"Low · ":""}${p.st>0?fs(p.st)+" in stock":""}</small></button>`).join("")||emptyState("No products match.","Try another search or category.")}</div></section>
+<aside class="card cart ${open?"open":""}"><div class="chead"><h4>${label("currentSale")}</h4><button class="cclose" aria-label="Close sale · Esc" onclick="state.cartOpen=false;render()">${label("back")}</button></div><div class="lines">${state.cart.map((l,i)=>{const p=state.products.find(x=>x.id===l.id);return `<div class="ln"><span class="ph th"><img src="${esc(p.image)}" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><div><b>${esc(p.n)}</b><br><small>${esc(p.s)} · ${kes(price(p,l.u))} / ${U[l.u]}${l.u==="c"?" ("+p.k+" btl)":""}${l.discountPercent?` · ${l.discountPercent}% off`:""}</small></div><div class="lp">${kes(lineNet(l))}</div><div class="line-tools"><div class="seg">${units(p).map(x=>`<button class="${x==l.u?"on":""}" onclick="unit(${i},'${x}')">${U[x]}</button>`).join("")}</div><button onclick="openDiscountEditor('line',${i})">Discount${l.discountPercent?` ${l.discountPercent}%`:""}</button><button class="line-void" onclick="requestLineVoid(${i})">Void line</button></div><div class="qty"><button aria-label="Less ${esc(p.n)}" onclick="qty(${i},-1)">−</button><b>${l.q}</b><button aria-label="More ${esc(p.n)}" onclick="qty(${i},1)">+</button></div></div>`}).join("")||emptyState("Cart is ready.","Tap or scan a product to start a sale.")}</div>
+<div class="cart-total-discount"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="openDiscountEditor('bill')">${label("billDiscount")}${state.cartDiscountPercent?` · ${state.cartDiscountPercent}%`:""}</button>${discountAmount?`<small>Discount · − ${kes(discountAmount)}</small>`:`<small class="mu">Approval above 5%</small>`}</div><div class="tot">${state.shopSettings.vatEnabled?`<div class="mu"><span>VAT 16% (incl.)</span><span>${kes(t*16/116)}</span></div>`:""}<div class="big"><span>Total</span><span>${kes(t)}</span></div></div>
+<div class="cart-commands"><button class="ghost" ${state.cart.length?"":"disabled"} onclick="holdSale()">${label("hold")}</button><button class="ghost" ${heldCount?"":"disabled"} onclick="openRecall()">${label("recall")}${heldCount?` (${heldCount})`:""}</button><button class="ghost" ${state.cart.length?"":"disabled"} onclick="clearCart()">${label("clear")}</button></div><div class="ft"><button class="pri" style="flex:1" ${state.cart.length&&ageReady&&tillOpen?"":"disabled"} onclick="charge()">${!tillOpen?label("tillClosed"):state.cart.length&&agePromptEnabled&&!state.ageVerified?label("verifyAge"):label("charge")+" "+kes(t)+" · <kbd>F4</kbd>"}</button></div></aside>${n?`<button class="cbar" onclick="state.cartOpen=true;render()"><span>${n} item${n>1?"s":""} · View sale</span><b>${kes(t)}</b></button>`:heldCount?`<button class="cbar" onclick="openRecall()"><span>${heldCount} held sale${heldCount===1?"":"s"} · Recall</span><b>${label("recall")}</b></button>`:""}</div>`;
+}
+
+const REPORT_PRESETS = [
+  { id: "today", label: "Today" },
+  { id: "7d", label: "7 days" },
+  { id: "30d", label: "30 days" },
+  { id: "90d", label: "90 days" },
+  { id: "all", label: "All time" }
+];
+
+function reportBounds(preset = state.reportPreset) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = { today: 1, "7d": 7, "30d": 30, "90d": 90 }[preset];
+  if (!days) return { start: "", end: localDateKey(today) };
+  const start = new Date(today);
+  start.setDate(start.getDate() - days + 1);
+  return { start: localDateKey(start), end: localDateKey(today) };
+}
+
+function isInReportRange(date, preset = state.reportPreset) {
+  const key = localDateKey(date);
+  const { start, end } = reportBounds(preset);
+  return (!start || key >= start) && key <= end;
+}
+
+function reportSales(includeVoided = false) {
+  return state.sales.filter(sale => (includeVoided || !sale.voided) && isInReportRange(sale.at));
+}
+
+function reportProductForLine(line) {
+  return state.products.find(product => product.id === line.productId) || state.products.find(product => product.n === line.n) || null;
+}
+
+function reportBottleQuantity(line) {
+  const product = reportProductForLine(line);
+  return product ? toBaseUnits(product, line.u, Number(line.q) || 0) / (product.baseUnitsPerBottle || 1) : Number(line.q) || 0;
+}
+
+function reportLineNet(line) {
+  const gross = Number(line.gross ?? ((Number(line.pr) || 0) * (Number(line.q) || 0)));
+  return Math.max(0, gross - (Number(line.lineDiscount) || 0));
+}
+
+function reportLineRevenue(sale, line) {
+  const lineNetValue = reportLineNet(line);
+  const totalLineNet = sale.lines.reduce((sum, item) => sum + reportLineNet(item), 0);
+  const billDiscount = Number(sale.billDiscountAmount) || 0;
+  return totalLineNet ? Math.max(0, lineNetValue - billDiscount * lineNetValue / totalLineNet) : 0;
+}
+
+function reportItemTotals(sales = reportSales()) {
+  const byProduct = new Map();
+  sales.forEach(sale => sale.lines.forEach(line => {
+    const product = reportProductForLine(line);
+    const key = product ? product.id : line.n;
+    const entry = byProduct.get(key) || { id: product?.id, name: product?.n || line.n, category: line.category || product?.g || "Other", bottles: 0, revenue: 0, estimatedMargin: 0 };
+    const bottles = reportBottleQuantity(line);
+    const revenue = reportLineRevenue(sale, line);
+    entry.bottles += bottles;
+    entry.revenue += revenue;
+    entry.estimatedMargin += revenue - bottles * (product ? product.buyPrice : 0);
+    byProduct.set(key, entry);
+  }));
+  return [...byProduct.values()];
+}
+
+function dailySalesData(sales = reportSales()) {
+  const byDate = new Map();
+  sales.forEach(sale => {
+    const key = localDateKey(sale.at);
+    byDate.set(key, (byDate.get(key) || 0) + (Number(sale.t) || 0));
+  });
+  const { start, end } = reportBounds();
+  if (!start) return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-60).map(([date, amount]) => ({ date, amount }));
+  const rows = [];
+  const date = new Date(`${start}T00:00:00`);
+  const last = new Date(`${end}T00:00:00`);
+  while (date <= last) {
+    const key = localDateKey(date);
+    rows.push({ date: key, amount: byDate.get(key) || 0 });
+    date.setDate(date.getDate() + 1);
+  }
+  return rows;
+}
+
+function salesChartMarkup(rows) {
+  if (!rows.length || !rows.some(row => row.amount > 0)) return emptyState("No completed sales in this period.", "Completed receipts will appear here.");
+  const width = 720, height = 230, left = 48, right = 12, top = 14, bottom = 38;
+  const chartWidth = width - left - right, chartHeight = height - top - bottom;
+  const max = Math.max(...rows.map(row => row.amount), 1);
+  const step = chartWidth / rows.length;
+  const barWidth = Math.max(3, Math.min(30, step * .62));
+  const ticks = 4;
+  const grid = Array.from({ length: ticks + 1 }, (_, index) => {
+    const value = max * (ticks - index) / ticks;
+    const y = top + chartHeight * index / ticks;
+    return `<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="var(--bd)" stroke-width="1"/><text x="${left-8}" y="${y+4}" text-anchor="end">${Math.round(value).toLocaleString("en-KE")}</text>`;
+  }).join("");
+  const bars = rows.map((row, index) => {
+    const barHeight = row.amount ? Math.max(1, row.amount / max * chartHeight) : 0;
+    const x = left + index * step + (step - barWidth) / 2;
+    const y = top + chartHeight - barHeight;
+    return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="3" fill="var(--ac)"><title>${esc(row.date)} · ${esc(kes(row.amount))}</title></rect>`;
+  }).join("");
+  const labelEvery = Math.max(1, Math.ceil(rows.length / 7));
+  const labels = rows.map((row, index) => index % labelEvery === 0 || index === rows.length - 1 ? `<text x="${left+index*step+step/2}" y="${height-10}" text-anchor="middle">${esc(row.date.slice(5))}</text>` : "").join("");
+  return `<div class="chart-scroll"><svg class="sales-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Sales by day chart">${grid}${bars}${labels}</svg></div>`;
+}
+
+function metricBarsMarkup(items, amountKey, labelKey, valueLabel) {
+  if (!items.length || !items.some(item => item[amountKey] > 0)) return emptyState("No recorded activity in this period.", "Activity will appear here as the shop makes sales.");
+  const max = Math.max(...items.map(item => item[amountKey]), 1);
+  return `<div class="metric-bars">${items.map(item => `<div class="metric-bar"><span title="${esc(item[labelKey])}">${esc(item[labelKey])}</span><span class="metric-bar-track"><i style="width:${Math.max(2, item[amountKey]/max*100)}%"></i></span><b>${esc(valueLabel(item[amountKey]))}</b></div>`).join("")}</div>`;
+}
+
+function reportMarginRows(sales = reportSales()) {
+  const actual = new Map(reportItemTotals(sales).map(item => [item.id ?? item.name, item]));
+  return state.products.map(product => {
+    const item = actual.get(product.id) || { bottles: 0, revenue: 0, estimatedMargin: 0 };
+    const unitMargin = product.b - product.buyPrice;
+    const marginPct = product.b ? unitMargin / product.b * 100 : 0;
+    return { product, bottles: item.bottles, revenue: item.revenue, estimatedMargin: item.estimatedMargin, unitMargin, marginPct };
+  }).sort((a, b) => b.unitMargin - a.unitMargin);
+}
+
+function reportShrinkageRows() {
+  return state.stockMovements.filter(movement => movement.type === "take" && isInReportRange(movement.at)).map(movement => {
+    const product = state.products.find(item => item.id === movement.productId);
+    const bottles = product ? movement.qty / (product.baseUnitsPerBottle || 1) : movement.qty;
+    return { movement, product, bottles, value: Math.abs(bottles) * (product?.buyPrice || 0) };
+  }).sort((a, b) => new Date(b.movement.at) - new Date(a.movement.at));
+}
+
+function reportEventRows() {
+  return state.auditLog.filter(entry => ["Void sale", "Void line", "Discount"].includes(entry.action) && isInReportRange(entry.at)).slice().sort((a, b) => new Date(b.at) - new Date(a.at));
+}
+
+function reportDateLabel() {
+  const preset = REPORT_PRESETS.find(item => item.id === state.reportPreset);
+  return preset ? preset.label : "7 days";
+}
+
+function reportViewMarkup() {
+  const sales = reportSales();
+  const salesTotal = sales.reduce((sum, sale) => sum + (Number(sale.t) || 0), 0);
+  const discounts = sales.reduce((sum, sale) => sum + (Number(sale.discountAmount) || 0), 0);
+  const pending = sales.filter(sale => sale.pend && (sale.reconciliationStatus || "pending") === "pending").length;
+  const average = sales.length ? salesTotal / sales.length : 0;
+  const daily = dailySalesData(sales);
+  const methods = [
+    { name: "Cash", amount: sales.filter(sale => sale.m === "cash").reduce((sum, sale) => sum + sale.t, 0) },
+    { name: "M-Pesa", amount: sales.filter(sale => sale.m === "mpesa").reduce((sum, sale) => sum + sale.t, 0) }
+  ];
+  const categoryMap = new Map();
+  sales.forEach(sale => sale.lines.forEach(line => {
+    const product = reportProductForLine(line);
+    const category = line.category || product?.g || "Other";
+    categoryMap.set(category, (categoryMap.get(category) || 0) + reportLineRevenue(sale, line));
+  }));
+  const categories = [...categoryMap.entries()].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
+  const sellers = reportItemTotals(sales).filter(item => item.bottles > 0).sort((a, b) => b.bottles - a.bottles);
+  const top = sellers.slice(0, 5);
+  const bottom = sellers.slice(-5).reverse();
+  const marginRows = reportMarginRows(sales);
+  const shrinkage = reportShrinkageRows();
+  const shrinkLoss = shrinkage.filter(item => item.bottles < 0).reduce((sum, item) => sum + Math.abs(item.bottles), 0);
+  const shrinkGain = shrinkage.filter(item => item.bottles > 0).reduce((sum, item) => sum + item.bottles, 0);
+  const shrinkValue = shrinkage.filter(item => item.bottles < 0).reduce((sum, item) => sum + item.value, 0);
+  const events = reportEventRows();
+  const voidSales = events.filter(entry => entry.action === "Void sale").length;
+  const voidLines = events.filter(entry => entry.action === "Void line").length;
+  const lastShift = state.shiftHistory[state.shiftHistory.length - 1];
+  return `<div class="report-page">
+<div class="report-heading"><div><h2>Sales &amp; stock reports</h2><small class="mu">${reportDateLabel()} · Itemized activity, stock takes and owner actions</small></div><div class="report-actions"><button onclick="exportReportCsv()">Export report CSV</button></div></div>
+<div class="report-toolbar"><div class="report-presets" role="group" aria-label="Report date range">${REPORT_PRESETS.map(preset => `<button class="${state.reportPreset===preset.id?"on":""}" aria-pressed="${state.reportPreset===preset.id}" onclick="setReportPreset('${preset.id}')">${preset.label}</button>`).join("")}</div><span class="report-note">Reports use completed itemized sales. Historical summary totals are not date-stamped.</span></div>
+<div class="report-grid">
+<section class="card report-card"><h4>Net sales</h4><div class="report-kpi">${kes(salesTotal)}</div><div class="report-caption">${sales.length} completed sale${sales.length===1?"":"s"}</div></section>
+<section class="card report-card"><h4>Average sale</h4><div class="report-kpi">${kes(average)}</div><div class="report-caption">${sales.length?"Net sales per receipt":"No receipts in range"}</div></section>
+<section class="card report-card"><h4>Discounts</h4><div class="report-kpi">${kes(discounts)}</div><div class="report-caption">${sales.filter(sale => sale.discountAmount > 0).length} discounted sales</div></section>
+<section class="card report-card"><h4>M-Pesa pending</h4><div class="report-kpi ${pending?"low":""}">${pending}</div><div class="report-caption">Offline payments to reconcile</div></section>
+<section class="card report-card"><h4>Latest shift variance</h4><div class="report-kpi ${lastShift&&lastShift.totalVariance!==0?"low":""}">${lastShift?`${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)}`:"—"}</div><div class="report-caption">${lastShift?esc(lastShift.id):"No closed shift"}</div></section>
+<section class="card report-card s4"><div class="report-title-row"><div><h3>Sales by day</h3><small>Completed receipts · ${reportDateLabel()}</small></div></div>${salesChartMarkup(daily)}</section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>By payment method</h3><small>Net receipt totals</small></div></div>${metricBarsMarkup(methods,"amount","name",kes)}</section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>By category</h3><small>Net sales after discounts</small></div></div>${metricBarsMarkup(categories,"amount","name",kes)}</section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>Top sellers</h3><small>Bottle equivalents</small></div></div>${top.length?metricBarsMarkup(top,"bottles","name",value=>`${fs(value)} btl`):`<p class="report-empty">No sold products in this period.</p>`}</section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>Bottom sellers</h3><small>Among products sold in this period</small></div></div>${bottom.length?metricBarsMarkup(bottom,"bottles","name",value=>`${fs(value)} btl`):`<p class="report-empty">No sold products in this period.</p>`}</section>
+<section class="card report-card s4"><div class="report-title-row"><div><h3>Margin by product</h3><small>List margin per bottle and estimated realized margin at current purchase cost</small></div></div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Product</th><th>Category</th><th class="num">Sold (btl eq.)</th><th class="num">Unit margin</th><th class="num">Margin %</th><th class="num">Est. realized margin</th></tr></thead><tbody>${marginRows.map(row=>`<tr><td>${esc(row.product.n)}</td><td>${esc(row.product.g)}</td><td class="num">${row.bottles?fs(row.bottles):"—"}</td><td class="num">${kes(row.unitMargin)}</td><td class="num">${row.marginPct.toFixed(1)}%</td><td class="num">${row.bottles?kes(row.estimatedMargin):"—"}</td></tr>`).join("")}</tbody></table></div></section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>Shrinkage</h3><small>Stock-take variance only</small></div><span class="badge b-take">${shrinkage.length} takes</span></div><div class="report-kpi ${shrinkLoss?"low":""}">${fs(shrinkLoss)} btl loss</div><div class="report-caption">${fs(shrinkGain)} btl gain · estimated loss value ${kes(shrinkValue)}</div>${shrinkage.length?`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Product</th><th>Variance</th><th>Ref</th><th>When</th></tr></thead><tbody>${shrinkage.slice(0,8).map(item=>`<tr><td>${esc(item.product?.n||"Product")}</td><td class="${item.bottles<0?"low":"ok"}">${item.bottles>0?"+":""}${fs(item.bottles)} btl</td><td>${esc(item.movement.ref||"—")}</td><td>${new Date(item.movement.at).toLocaleDateString("en-KE")}</td></tr>`).join("")}</tbody></table></div>`:`<p class="report-empty">No stock-take variances in this period.</p>`}</section>
+<section class="card report-card s2"><div class="report-title-row"><div><h3>Voids &amp; discounts</h3><small>Void actions and discounts recorded in the audit log</small></div><button class="row-action" onclick="go('audit')">Audit log</button></div><div class="row"><span>Sale voids</span><b>${voidSales}</b></div><div class="row"><span>Line voids</span><b>${voidLines}</b></div><div class="row"><span>Discount value on completed sales</span><b>${kes(discounts)}</b></div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Action</th><th>Details</th><th>By / when</th></tr></thead><tbody>${events.slice(0,8).map(entry=>`<tr><td>${esc(entry.action)}</td><td>${esc(entry.details)}</td><td>${esc(entry.user)} · ${new Date(entry.at).toLocaleDateString("en-KE")}</td></tr>`).join("")||`<tr><td colspan="3" class="report-empty">No voids or discount actions in this period.</td></tr>`}</tbody></table></div></section>
+</div></div>`;
+}
+
+function reorderSuggestions() {
+  const windowStart = new Date();
+  windowStart.setHours(0, 0, 0, 0);
+  windowStart.setDate(windowStart.getDate() - 29);
+  const from = localDateKey(windowStart);
+  const units = new Map();
+  state.sales.filter(sale => !sale.voided && localDateKey(sale.at) >= from).forEach(sale => sale.lines.forEach(line => {
+    const product = reportProductForLine(line);
+    if (product) units.set(product.id, (units.get(product.id) || 0) + reportBottleQuantity(line));
+  }));
+  return state.products.map(product => {
+    const sold = units.get(product.id) || 0;
+    const dailyVelocity = sold / 30;
+    const minimum = reorderThreshold(product);
+    const target = Math.max(minimum, minimum + dailyVelocity * 14);
+    const needBottles = Math.max(0, target - product.st);
+    const cartons = needBottles > 0 ? Math.ceil(needBottles / product.k) : 0;
+    return { product, supplier: product.preferredSupplier || state.suppliers[0], sold, dailyVelocity, target, needBottles, cartons };
+  }).filter(item => item.cartons > 0).sort((a,b) => a.supplier.localeCompare(b.supplier) || b.needBottles-a.needBottles);
+}
+
+function reorderSupplierNames() {
+  return [...new Set([...state.suppliers, ...state.products.map(product => product.preferredSupplier).filter(Boolean)])];
+}
+
+function ensureReorderSupplier() {
+  const names = reorderSupplierNames();
+  if (!names.includes(state.reorderSupplier)) {
+    const firstSuggested = reorderSuggestions()[0]?.supplier;
+    state.reorderSupplier = firstSuggested || names[0] || "Supplier";
+  }
+  return state.reorderSupplier;
+}
+
+function reorderLinesForSupplier(supplier = ensureReorderSupplier()) {
+  const suggestions = reorderSuggestions().filter(item => item.supplier === supplier);
+  const draft = state.purchaseDrafts[supplier];
+  return suggestions.map(item => {
+    const saved = draft?.items?.find(line => line.productId === item.product.id);
+    return { ...item, cartons: saved ? saved.cartons : item.cartons };
+  });
+}
+
+function setReportPreset(preset) {
+  if (!REPORT_PRESETS.some(item => item.id === preset)) return;
+  state.reportPreset = preset;
+  render();
+}
+
+function setReportTab(tab) {
+  state.reportTab = tab === "reorder" ? "reorder" : "reports";
+  render();
+}
+
+function selectReorderSupplier(supplier) {
+  state.reorderSupplier = supplier;
+  render();
+}
+
+function updatePurchaseDraftQty(supplier, productId, rawValue) {
+  const value = Math.max(0, Math.floor(Number(rawValue) || 0));
+  const draft = state.purchaseDrafts[supplier] || { id: "", supplier, items: reorderSuggestions().filter(item => item.supplier === supplier).map(item => ({ productId: item.product.id, cartons: item.cartons })) };
+  const existing = draft.items.find(item => item.productId === productId);
+  if (existing) existing.cartons = value;
+  else draft.items.push({ productId, cartons: value });
+  state.purchaseDrafts[supplier] = draft;
+  render();
+}
+
+function buildPurchaseDraft(supplier = ensureReorderSupplier()) {
+  const existing = state.purchaseDrafts[supplier] || { id: "", items: [] };
+  const currentLines = reorderLinesForSupplier(supplier);
+  const lines = currentLines.map(line => ({ productId: line.product.id, cartons: line.cartons }));
+  if (!lines.some(line => line.cartons > 0)) {
+    toast("Set at least one carton quantity before building a purchase order");
+    return false;
+  }
+  const id = existing.id || `DPO-${String(++state.purchaseDraftSeq).padStart(4,"0")}`;
+  state.purchaseDrafts[supplier] = { id, supplier, items: lines, createdAt: existing.createdAt || new Date(), updatedAt: new Date() };
+  render();
+  toast(`${id} draft prepared for ${supplier}`);
+  return true;
+}
+
+function purchaseDraftTotal(supplier) {
+  return reorderLinesForSupplier(supplier).reduce((sum, line) => sum + line.cartons * line.product.k * line.product.buyPrice, 0);
+}
+
+function whatsappMessage(supplier) {
+  const draft = state.purchaseDrafts[supplier];
+  if (!draft) return "";
+  const lines = reorderLinesForSupplier(supplier).filter(line => line.cartons > 0);
+  return [`Hi ${supplier},`, "", `Please prepare draft order ${draft.id} for Cellar & Co.:`, ...lines.map(line => `• ${line.product.n} — ${line.cartons} carton${line.cartons===1?"":"s"} (${line.cartons*line.product.k} bottles)`), "", `Estimated total: ${kes(purchaseDraftTotal(supplier))}`, "Please confirm availability and delivery timing. Thank you."].join("\n");
+}
+
+function openWhatsAppPreview(supplier = ensureReorderSupplier()) {
+  if (!state.purchaseDrafts[supplier]?.id) {
+    toast("Build the draft purchase order first");
+    return false;
+  }
+  state.whatsappPreviewSupplier = supplier;
+  render();
+  return true;
+}
+
+function closeWhatsAppPreview() {
+  state.whatsappPreviewSupplier = "";
+  render();
+}
+
+function copyWhatsAppPreview() {
+  const text = whatsappMessage(state.whatsappPreviewSupplier);
+  if (!text) return false;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast("Order message copied")).catch(() => toast("Select and copy the message preview"));
+  } else {
+    $("whatsapp-message")?.select();
+    toast("Select and copy the message preview");
+  }
+  return true;
+}
+
+function downloadCsv(filename, headers, rows) {
+  const escapeCsv = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(row => row.map(escapeCsv).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`${filename} downloaded · demo CSV`);
+}
+
+function exportReportCsv() {
+  const sales = reportSales();
+  const rows = [];
+  sales.forEach(sale => rows.push(["Sale", localDateKey(sale.at), sale.no, "Receipt total", "", "", sale.t, `${sale.m === "cash" ? "Cash" : "M-Pesa"}${sale.pend ? " · pending" : ""}`]));
+  sales.filter(sale => sale.discountAmount > 0).forEach(sale => rows.push(["Discount", localDateKey(sale.at), sale.no, "Total discount", "", "", sale.discountAmount, `${sale.discountPercent || 0}% bill discount plus line discounts`]));
+  const methodTotals = ["cash", "mpesa"].map(method => [method, sales.filter(sale => sale.m === method).reduce((sum, sale) => sum + sale.t, 0)]);
+  methodTotals.forEach(([method, amount]) => rows.push(["Payment method", "", "", method === "cash" ? "Cash" : "M-Pesa", "", "", amount, ""]));
+  const categories = new Map();
+  sales.forEach(sale => sale.lines.forEach(line => {
+    const category = line.category || reportProductForLine(line)?.g || "Other";
+    categories.set(category, (categories.get(category) || 0) + reportLineRevenue(sale,line));
+  }));
+  categories.forEach((amount, category) => rows.push(["Category", "", "", category, category, "", amount, ""]));
+  reportItemTotals(sales).forEach(item => rows.push(["Seller", "", "", item.name, item.category, fs(item.bottles), item.revenue, "Bottle equivalent"]));
+  reportMarginRows(sales).forEach(item => rows.push(["Margin", "", "", item.product.n, item.product.g, fs(item.bottles), item.bottles ? item.estimatedMargin : item.unitMargin, item.bottles ? "Estimated realized margin" : "List margin per bottle"]));
+  reportShrinkageRows().forEach(item => rows.push(["Stock-take variance", localDateKey(item.movement.at), item.movement.ref, item.product?.n || "Product", "", fs(item.bottles), item.bottles < 0 ? -item.value : item.value, item.movement.note || ""]));
+  reportEventRows().forEach(entry => rows.push([entry.action, localDateKey(entry.at), "", entry.details, "", "", "", entry.user]));
+  downloadCsv(`cellar-report-${state.reportPreset}-${localDateKey(new Date())}.csv`, ["Section","Date","Reference","Product / detail","Category","Quantity","Amount (KES)","Notes"], rows);
+}
+
+function exportReorderCsv() {
+  const rows = reorderSuggestions().map(item => [item.supplier, item.product.n, fs(item.product.st), fs(item.sold), item.dailyVelocity.toFixed(2), item.cartons, item.cartons*item.product.k, item.cartons*item.product.k*item.product.buyPrice]);
+  downloadCsv(`cellar-reorder-list-${localDateKey(new Date())}.csv`, ["Supplier","Product","On hand (btl)","Sold last 30 days (btl eq.)","Daily velocity","Suggested cartons","Order bottles","Estimated cost (KES)"], rows);
+}
+
+function exportPurchaseDraftCsv(supplier = ensureReorderSupplier()) {
+  const draft = state.purchaseDrafts[supplier];
+  if (!draft?.id) return false;
+  const rows = reorderLinesForSupplier(supplier).filter(line => line.cartons > 0).map(line => [draft.id, supplier, line.product.n, line.cartons, line.cartons*line.product.k, line.product.buyPrice, line.cartons*line.product.k*line.product.buyPrice]);
+  downloadCsv(`${draft.id.toLowerCase()}-draft.csv`, ["Draft PO","Supplier","Product","Cartons","Bottles","Cost per bottle (KES)","Estimated line cost (KES)"], rows);
+  return true;
+}
+
+function reorderViewMarkup() {
+  const suggestions = reorderSuggestions();
+  const supplier = ensureReorderSupplier();
+  const supplierNames = reorderSupplierNames();
+  const lines = reorderLinesForSupplier(supplier);
+  const draft = state.purchaseDrafts[supplier];
+  const totalCartons = lines.reduce((sum, line) => sum + line.cartons, 0);
+  const totalCost = lines.reduce((sum, line) => sum + line.cartons*line.product.k*line.product.buyPrice, 0);
+  const supplierCounts = new Map();
+  suggestions.forEach(item => supplierCounts.set(item.supplier, (supplierCounts.get(item.supplier) || 0) + 1));
+  return `<div class="report-page">
+<div class="reorder-heading"><div><h3>Reorder list</h3><small class="mu">Suggested from 30-day sales velocity · 14-day cover + configured stock minimum</small></div><div class="report-actions"><button onclick="exportReorderCsv()">Export reorder CSV</button></div></div>
+<div class="report-note">Quantities are carton estimates. Zero sales velocity still respects each product’s configured reorder minimum.</div>
+${suggestions.length?`<div class="reorder-layout"><section class="card"><h4>Suppliers</h4><div class="supplier-tabs">${supplierNames.map(name=>`<button class="${supplier===name?"on":""}" onclick="selectReorderSupplier('${esc(name)}')">${esc(name)}<span>${supplierCounts.get(name)||0} items</span></button>`).join("")}</div></section>
+<section class="card"><div class="report-title-row"><div><h3>${esc(supplier)}</h3><small>${draft?.id?`${esc(draft.id)} · Draft`:`${lines.length} suggested line${lines.length===1?"":"s"}`}</small></div><span class="badge b-open">${totalCartons} cartons</span></div>
+${lines.length?`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Product</th><th class="num">On hand</th><th class="num">/ day</th><th class="num">Suggested ctn</th><th class="num">Order ctn</th></tr></thead><tbody>${lines.map(line=>`<tr><td>${esc(line.product.n)}<small class="mu" style="display:block">${esc(line.product.s)}</small></td><td class="num">${fs(line.product.st)} btl</td><td class="num">${line.dailyVelocity.toFixed(2)}</td><td class="num">${line.cartons}</td><td class="num"><input class="po-qty" aria-label="Order cartons for ${esc(line.product.n)}" type="number" min="0" step="1" value="${line.cartons}" onchange="updatePurchaseDraftQty('${esc(supplier)}',${line.product.id},this.value)"></td></tr>`).join("")}</tbody></table></div>`:`<p class="report-empty">No suggested quantities for this supplier.</p>`}
+<div class="po-summary"><span>Estimated order cost</span><span>${kes(totalCost)}</span></div><div class="po-actions"><button class="build-po pri" ${lines.some(line=>line.cartons>0)?"":"disabled"} onclick="buildPurchaseDraft('${esc(supplier)}')">${draft?.id?"Update draft purchase order":"Build draft purchase order"}</button><button ${draft?.id?"":"disabled"} onclick="openWhatsAppPreview('${esc(supplier)}')">Share via WhatsApp</button><button ${draft?.id?"":"disabled"} onclick="exportPurchaseDraftCsv('${esc(supplier)}')">Export draft CSV</button></div></section></div>`:`<section class="card"><h3>No reorder quantities suggested</h3><p class="mu">Stock is above configured minimums. Suggestions will use sales velocity as completed sales are recorded.</p></section>`}
+</div>`;
+}
+
+function whatsappPreviewView() {
+  const supplier = state.whatsappPreviewSupplier;
+  if (!supplier) return "";
+  return `<div class="ov"><section class="mod wa-preview" role="dialog" aria-modal="true" aria-labelledby="whatsapp-preview-title"><div class="mh"><div><small>Draft message · nothing sent</small><h3 id="whatsapp-preview-title">WhatsApp order preview</h3></div><button class="x" aria-label="Close · Esc" onclick="closeWhatsAppPreview()">✕</button></div><div class="mb"><p class="mu">Review or copy the text, then send it from WhatsApp when ready.</p><textarea id="whatsapp-message" readonly>${esc(whatsappMessage(supplier))}</textarea></div><div class="ft"><button onclick="closeWhatsAppPreview()">Close</button><button class="pri" onclick="copyWhatsAppPreview()">Copy message</button></div></section></div>`;
 }
 
 function dash() {
-  const validSales = state.sales.filter(s => !s.voided);
-  const sum = validSales.reduce((a, s) => a + s.t, 0);
-  const cash = base.cash + validSales.filter(s => s.m == "cash").reduce((a, s) => a + s.t, 0);
-  const mp = base.mp + validSales.filter(s => s.m == "mpesa").reduce((a, s) => a + s.t, 0);
-  const pend = validSales.filter(s => s.pend).length;
-  const top = { ...seed };
-  validSales.forEach(s => s.lines.forEach(l => top[l.n] = (top[l.n] || 0) + l.q));
-  const tp = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const mx = tp[0][1];
-  const lo = state.products.filter(isLowStock);
-  const lastShift = state.shiftHistory[state.shiftHistory.length - 1];
-  const approvalActivity = state.auditLog.filter(entry => ["Void sale", "Discount", "Price override"].includes(entry.action)).slice(-5).reverse();
-
-  return `<div class="dash">
-<div class="card s2"><h4>Sales today</h4><div class="big" style="font-size:34px">${kes(base.tot+sum)}</div><small>Cash ${kes(cash)} · M-Pesa ${kes(mp)}</small></div>
-<div class="card"><h4>Transactions</h4><div class="big">${base.n+validSales.length}</div><small>Avg ${kes((base.tot+sum)/(base.n+validSales.length))}</small></div>
-<div class="card"><h4>M-Pesa to reconcile</h4><div class="big ${pend?"low":""}">${pend}</div><small>Entered manually while offline</small></div>
-<div class="card s2"><h4>Top sellers</h4>${tp.map(([n,q])=>`<div style="margin-top:8px"><div class="row" style="border:0;padding:0"><span>${n}</span><b>${q}</b></div><div class="bar"><i style="width:${q/mx*100}%"></i></div></div>`).join("")}</div>
-<div class="card s2"><h4>Reorder list</h4>${lo.map(p=>`<div class="row"><span>${p.n} <small>${p.s}</small>${p.st < 0 ? ' <span class="badge b-adj">Negative stock</span>' : ''}</span><span><b class="low">${onHandLabel(p)} left</b> · order ${p.reorderLevel} ctn</span></div>`).join("")||`<p class="mu">Stock levels look healthy.</p>`}</div>
-<div class="card s2"><h4>${lastShift?`Latest shift variance · ${lastShift.id}`:"Till variance"}</h4>${lastShift?`<div class="big ${lastShift.totalVariance===0?"ok":"low"}">${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)}</div><div class="row"><span>Cash · expected ${kes(lastShift.cashExpected)}, counted ${kes(lastShift.cashCounted)}</span><b>${lastShift.cashVariance>0?"+":""}${kes(lastShift.cashVariance)}</b></div><div class="row"><span>M-Pesa · expected ${kes(lastShift.mpesaExpected)}, received ${kes(lastShift.mpesaReceived)}</span><b>${lastShift.mpesaVariance>0?"+":""}${kes(lastShift.mpesaVariance)}</b></div><small>${lastShift.reason?`Reason: ${esc(lastShift.reason)} · `:""}Signed off by ${lastShift.signedOffBy} · ${lastShift.closedAt.toLocaleString("en-KE")}</small>`:`<p class="mu">No closed shift yet. Close a till to record its cash and M-Pesa variance.</p>`}</div>
-<div class="card s2"><div class="audit-heading"><h4>Voids, discounts &amp; price overrides</h4><button class="row-action" onclick="go('audit')">Audit log</button></div>${approvalActivity.map(entry=>`<div class="row"><span><b>${esc(entry.action)}</b> · ${esc(entry.details)}</span><small>${esc(entry.user)} · ${new Date(entry.at).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}</small></div>`).join("")||`<p class="mu">Approved actions will appear here.</p>`}</div></div>`;
+  return `<div class="report-page"><div class="report-heading"><div><h2>Reports</h2><small class="mu">Sales performance, stock variance and replenishment</small></div><div class="report-tabs"><button class="${state.reportTab==="reports"?"on":""}" onclick="setReportTab('reports')">Reports</button><button class="${state.reportTab==="reorder"?"on":""}" onclick="setReportTab('reorder')">Reorder list</button></div></div>${state.reportTab==="reorder"?reorderViewMarkup():reportViewMarkup()}</div>`;
 }
 
 // Stock Management Handlers (Prompt 1)
@@ -1907,7 +3067,7 @@ function productsView() {
 
 <div class="card s2" style="grid-column:1/-1">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-<div><h4>Product list &amp; pricing</h4><small class="mu">All prices include VAT 16%</small></div>
+<div><h4>Product list &amp; pricing</h4><small class="mu">${state.shopSettings.vatEnabled?"All prices include VAT 16%":"Prices shown as entered"}</small></div>
 <button class="row-action" onclick="openProductEditor()">Add product</button>
 </div>
 <div style="overflow-x:auto">
@@ -1959,6 +3119,7 @@ ${open?`<button class="row-action" onclick="beginTillClose()">Close till</button
 <div class="row"><span>Shift transactions</span><b>${open?currentSales.length:lastShift?.transactionCount||0}</b></div>
 <div class="row"><span>Shift status</span><b class="${open?"ok":"low"}">${open?"Active shift · Sales enabled":"Closed · Sales blocked"}</b></div>
 ${lastShift?`<div class="row"><span>Last close · ${lastShift.id}</span><b class="${lastShift.totalVariance===0?"ok":"low"}">${lastShift.totalVariance>0?"+":""}${kes(lastShift.totalVariance)} variance</b></div>`:""}
+${state.currentUser.role==="owner"?`<div class="row"><span>Offline M-Pesa reconciliation</span><button class="row-action" onclick="go('reconcile')">Review ${pendingMpesaReconciliationCount()} pending</button></div>`:""}
 </div>
 </div>`;
 }
@@ -2005,7 +3166,7 @@ function loginView() {
 function ownerApprovalView() {
   const approval = state.approval;
   if (!approval) return "";
-  return `<div class="ov approval-overlay"><section class="mod approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-title"><div class="mh"><div><small>Owner approval required</small><h3 id="approval-title">${esc(approval.action)}</h3></div><button class="x" aria-label="Close" onclick="cancelOwnerApproval()">✕</button></div><div class="mb"><p>${esc(approval.details)}</p><div class="approval-requester">Requested by <b>${esc(approval.requestedBy)}</b></div><label class="fl" for="approval-pin">Owner PIN</label><input id="approval-pin" type="password" inputmode="numeric" autocomplete="current-password" value="${esc(state.approvalPin)}" oninput="state.approvalPin=this.value" onkeydown="if(event.key==='Enter')approveOwnerAction()" placeholder="Enter owner PIN">${state.approvalError?`<p class="login-error" role="alert">${esc(state.approvalError)}</p>`:""}</div><div class="ft"><button onclick="cancelOwnerApproval()">Cancel</button><button class="pri" onclick="approveOwnerAction()">Approve &amp; continue</button></div></section></div>`;
+  return `<div class="ov approval-overlay"><section class="mod approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-title"><div class="mh"><div><small>Owner approval required</small><h3 id="approval-title">${esc(approval.action)}</h3></div><button class="x" aria-label="Close · Esc" onclick="cancelOwnerApproval()">✕</button></div><div class="mb"><p>${esc(approval.details)}</p><div class="approval-requester">Requested by <b>${esc(approval.requestedBy)}</b></div>${approval.reasonRequired?`<label class="fl" for="approval-reason">Reason for void</label><input id="approval-reason" value="${esc(state.approvalReason)}" oninput="updateApprovalReason(this.value)" placeholder="e.g. Wrong item entered" required>`:""}<label class="fl" for="approval-pin">Owner PIN</label><input id="approval-pin" type="password" inputmode="numeric" autocomplete="current-password" value="${esc(state.approvalPin)}" oninput="state.approvalPin=this.value" onkeydown="if(event.key==='Enter')approveOwnerAction()" placeholder="Enter owner PIN">${state.approvalError?`<p class="login-error" role="alert">${esc(state.approvalError)}</p>`:""}</div><div class="ft"><button onclick="cancelOwnerApproval()">Cancel</button><button id="approve-owner-action" class="pri" ${approval.reasonRequired&&!state.approvalReason.trim()?"disabled":""} onclick="approveOwnerAction()">Approve &amp; continue</button></div></section></div>`;
 }
 
 function localDateKey(date) {
@@ -2039,27 +3200,54 @@ function auditView() {
   return `<div class="audit-screen"><section class="card"><div class="audit-heading"><div><h3>Audit log</h3><small class="mu">Sign-ins, sales and owner-approved actions</small></div><span class="badge b-open">${filtered.length} entries</span></div><div class="audit-filters"><label>User<select aria-label="Filter by user" onchange="setAuditFilter('user',this.value)"><option value="all">All users</option>${users.map(user=>`<option value="${esc(user)}" ${state.auditFilterUser===user?"selected":""}>${esc(user)}</option>`).join("")}</select></label><label>Action<select aria-label="Filter by action" onchange="setAuditFilter('action',this.value)"><option value="all">All actions</option>${actions.map(action=>`<option value="${esc(action)}" ${state.auditFilterAction===action?"selected":""}>${esc(action)}</option>`).join("")}</select></label><label>From<input aria-label="Filter from date" type="date" value="${esc(state.auditFilterFrom)}" onchange="setAuditFilter('from',this.value)"></label><label>To<input aria-label="Filter to date" type="date" value="${esc(state.auditFilterTo)}" onchange="setAuditFilter('to',this.value)"></label><button class="ghost" onclick="clearAuditFilters()">Clear filters</button></div><div class="audit-list">${filtered.map(entry=>`<article class="audit-entry"><div><b>${esc(entry.action)}</b><small>${new Date(entry.at).toLocaleString("en-KE")}</small></div><div><span>${esc(entry.details)}</span><small>By ${esc(entry.user)}</small></div></article>`).join("")||`<p class="mu audit-empty">No matching activity.</p>`}</div></section></div>`;
 }
 
-function settingsView() {
-  return `<div class="dash">
-<div class="card"><h4>Shop profile</h4><div class="big">Cellar &amp; Co.</div><small>Wines &amp; Spirits · Retail</small></div>
-<div class="card"><h4>KRA PIN</h4><div class="big" style="font-size:1.35rem">P000000000X</div><small>VAT 16% inclusive</small></div>
-<div class="card s2"><h4>Hardware setup</h4><div class="big">1 Till station</div><small>80mm printer · Cash drawer · Barcode scanner</small></div>
+function settingsReceiptPreview() {
+  const settings = state.shopSettings;
+  return `<div class="paper settings-paper" style="--receipt-width:${Number(settings.paperWidth)}mm"><div class="c"><b class="settings-receipt-name">${esc(settings.name || "Shop name")}</b>${settings.receiptHeader.trim()?`<br>${esc(settings.receiptHeader)}`:""}<br>${esc(settings.address || "Shop address")}<br><span class="m">KRA PIN ${esc(settings.kraPin || "Not set")}</span></div><hr><div class="r"><span>Sample receipt</span><span>INV-000001</span></div><div class="r m"><span>18 Oct 2026 · 14:30</span><span>Till 1</span></div><hr><div class="r"><span>Sample product</span><b>1,200</b></div><div class="r m"><span>Subtotal</span><span>1,200</span></div>${settings.vatEnabled?`<div class="r m"><span>VAT 16% (incl.)</span><span>166</span></div>`:""}<div class="r tt"><span>TOTAL</span><span>KES 1,200</span></div><hr><div class="etims-preview"><div class="qr">QR<br>placeholder</div><div><b>eTIMS · preview</b><small>Control unit: ${esc(settings.controlUnitId || "Not set")}</small><small>Serial: ${esc(settings.controlUnitSerial || "Not set")}</small><small>Invoice: INV-000001</small><small>Status: Demo · not connected</small></div></div><hr>${settings.receiptFooter.trim()?`<div class="c m settings-receipt-footer">${esc(settings.receiptFooter).replace(/\r?\n/g,"<br>")}</div>`:""}</div>`;
+}
 
-<div class="card s2" style="grid-column:1/-1">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-<h4>Shop &amp; system configuration</h4>
-<small class="mu">Prompt 8: Receipt editor · eTIMS settings · Hardware test</small>
-</div>
-<div class="row"><span>Store name</span><b>CELLAR &amp; CO. WINES &amp; SPIRITS</b></div>
-<div class="row"><span>Location</span><b>Demo shop · Nairobi, Kenya</b></div>
-<div class="row"><span>Tax rate</span><b>VAT 16% (Inclusive)</b></div>
-<div class="row"><span>eTIMS status</span><b class="ok">Fields enabled (Verification pending)</b></div>
-<div class="row"><span>Age check (18+)</span><b class="ok">Mandatory before charging</b></div>
-<div class="row"><span>Receipt layout</span><b>80mm thermal paper with serrated edge</b></div>
-<div class="row"><span>Offline operation</span><b class="ok">PWA offline-first enabled</b></div>
-<div class="row"><span>When stock is zero</span><div class="policy-options"><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy === "block" ? "checked" : ""} onchange="state.zeroStockPolicy='block';render()"> Block sale</label><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy === "allow" ? "checked" : ""} onchange="state.zeroStockPolicy='allow';render()"> Allow and flag as negative stock</label></div></div>
-</div>
-</div>`;
+function settingsView() {
+  const settings = state.shopSettings;
+  const outsideHours = outsideTradingHours();
+  const hoursStatus = !settings.tradingHoursReminder ? `Reminder off · trading hours ${esc(settings.openingTime)}–${esc(settings.closingTime)}` : outsideHours ? "Outside configured trading hours" : `Reminder active · ${esc(settings.openingTime)}–${esc(settings.closingTime)}`;
+  const toggle = (key, labelText) => `<div class="settings-toggle"><span>${labelText}</span><button class="sw ${settings[key]?"on":""}" role="switch" aria-checked="${settings[key]}" aria-label="${labelText}" onclick="setShopSetting('${key}',!state.shopSettings.${key})"><i></i></button></div>`;
+  return `<div class="settings-page">
+    <div class="settings-heading"><div><h2>Settings</h2><small class="mu">Shop identity, receipts, checkout and connected hardware</small></div><div class="settings-language"><span>Button labels</span><button class="${state.language==="en"?"on":""}" onclick="setLanguage('en')">English</button><button class="${state.language==="sw"?"on":""}" onclick="setLanguage('sw')">Kiswahili</button></div></div>
+    <div class="settings-grid">
+      <section class="card"><div class="settings-card-head"><div><h3>Shop &amp; receipt</h3><small class="mu">Printed on customer receipts</small></div></div><div class="settings-fields">
+        <label>Shop name<input value="${esc(settings.name)}" oninput="updateShopSetting('name',this.value)"></label>
+        <label>KRA PIN<input value="${esc(settings.kraPin)}" oninput="updateShopSetting('kraPin',this.value.toUpperCase())"></label>
+        <label class="wide">Shop address<input value="${esc(settings.address)}" oninput="updateShopSetting('address',this.value)"></label>
+        <label class="wide">Receipt header<textarea rows="2" oninput="updateShopSetting('receiptHeader',this.value)">${esc(settings.receiptHeader)}</textarea></label>
+        <label class="wide">Receipt footer<textarea rows="2" oninput="updateShopSetting('receiptFooter',this.value)">${esc(settings.receiptFooter)}</textarea></label>
+        <div class="settings-field wide"><span class="settings-label">Paper width</span><div class="settings-choice"><button class="${settings.paperWidth===58?"on":""}" onclick="setShopSetting('paperWidth',58)">58 mm</button><button class="${settings.paperWidth===80?"on":""}" onclick="setShopSetting('paperWidth',80)">80 mm</button></div></div>
+        ${toggle("vatEnabled","VAT enabled · 16% inclusive")}
+      </div></section>
+
+      <section class="card"><div class="settings-card-head"><div><h3>Checkout &amp; trading hours</h3><small class="mu">Reminders appear on the till screen</small></div></div><div class="settings-stack">
+        ${toggle("agePromptEnabled","Prompt for 18+ age check before charging")}
+        ${toggle("tradingHoursReminder","Remind staff outside trading hours")}
+        <div class="settings-fields settings-hours"><label>Opening time<input type="time" value="${esc(settings.openingTime)}" onchange="setShopSetting('openingTime',this.value)"></label><label>Closing time<input type="time" value="${esc(settings.closingTime)}" onchange="setShopSetting('closingTime',this.value)"></label></div>
+        <div class="settings-hint ${settings.tradingHoursReminder&&outsideHours?"low":"mu"}">${hoursStatus}</div>
+        <div class="settings-toggle"><span>VAT on receipts</span><b>${settings.vatEnabled?"16% inclusive":"Disabled"}</b></div>
+      </div></section>
+
+      <section class="card"><div class="settings-card-head"><div><h3>eTIMS fields</h3><small class="mu">Receipt preview only · demo connection</small></div><span class="badge b-adj">Not connected</span></div><div class="settings-fields">
+        <label>Control unit ID<input value="${esc(settings.controlUnitId)}" oninput="updateShopSetting('controlUnitId',this.value)"></label>
+        <label>Control unit serial<input value="${esc(settings.controlUnitSerial)}" oninput="updateShopSetting('controlUnitSerial',this.value)"></label>
+        <div class="etims-note wide"><div class="qr">QR<br>placeholder</div><div><b>eTIMS receipt fields</b><small>Control unit ID and serial appear on the receipt preview.</small><small>QR is a placeholder; no KRA submission is made.</small></div></div>
+      </div></section>
+
+      <section class="card"><div class="settings-card-head"><div><h3>Printer &amp; cash drawer</h3><small class="mu">Simulated device checks</small></div></div><div class="hardware-tests">
+        <div><b>Receipt printer</b><div class="hardware-test-status">${state.hardwareTests.printer.includes("…")?loadingSkeleton(1):`<small>${esc(state.hardwareTests.printer)}</small>`}</div><button onclick="runHardwareTest('printer')">${IC.printer} Test printer</button></div>
+        <div><b>Cash drawer</b><div class="hardware-test-status">${state.hardwareTests.drawer.includes("…")?loadingSkeleton(1):`<small>${esc(state.hardwareTests.drawer)}</small>`}</div><button onclick="runHardwareTest('drawer')">${IC.drawer} Test cash drawer</button></div>
+      </div><small class="mu">Paper width: ${settings.paperWidth} mm · 1 till station</small></section>
+
+      <section class="card settings-preview-card"><div class="settings-card-head"><div><h3>Live receipt preview</h3><small class="mu">Updates as shop and eTIMS fields change</small></div><span class="badge b-open">${settings.paperWidth} mm</span></div><div id="settings-receipt-preview" aria-live="polite">${settingsReceiptPreview()}</div></section>
+
+      <section class="card"><div class="settings-card-head"><div><h3>Stock policy</h3><small class="mu">When stock reaches zero</small></div></div><div class="row"><span>Zero-stock sales</span><div class="policy-options"><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy==="block"?"checked":""} onchange="state.zeroStockPolicy='block';render()"> Block sale</label><label><input type="radio" name="zero-policy" ${state.zeroStockPolicy==="allow"?"checked":""} onchange="state.zeroStockPolicy='allow';render()"> Allow and flag as negative stock</label></div></div><div class="row"><span>Offline operation</span><b class="ok">Enabled · local sync queue</b></div></section>
+      <section class="card demo-reset-card"><div class="settings-card-head"><div><h3>Demo data</h3><small class="mu">Restore the original sample products and stock</small></div></div><p>Reset clears in-memory sales, stock movements, purchases, settings changes and approvals.</p><button class="demo-reset-button" onclick="requestDemoReset()">${IC.reset} Reset demo data</button></section>
+    </div>
+  </div>`;
 }
 
 function renderScreen(v) {
@@ -2068,6 +3256,8 @@ function renderScreen(v) {
     case "stock": return stockView();
     case "products": return productsView();
     case "till": return tillView();
+    case "sync": return syncQueueView();
+    case "reconcile": return mpesaReconciliationView();
     case "reports": return dash();
     case "users": return usersView();
     case "audit": return auditView();
@@ -2080,25 +3270,50 @@ function renderScreen(v) {
 function pay() {
   const d = state.payment;
   const t = total();
+  const phonePresent = !!String(d.phone || "").trim();
   let b, ok;
   if (d.m == "cash") {
     ok = d.tend >= t;
     const q = [t, ...[500, 1000, 2000, 5000].filter(x => x > t)].slice(0, 4);
     b = `<div><label class="fl" for="tend">Amount received</label><div class="inp"><span>KES</span><input id="tend" inputmode="numeric" value="${d.tend}" oninput="upd('tend',+this.value.replace(/\\D/g,''),'tend')"></div></div><div class="qk">${q.map(x=>`<button class="${x==d.tend?"on":""}" onclick="upd('tend',${x})">${x==t?"Exact":x.toLocaleString()}</button>`).join("")}</div><div class="sum ${ok?"good":"bad"}"><span>${ok?"Change due":"Still to pay"}</span><b>${kes(Math.abs(d.tend-t))}</b></div>`;
   } else if (state.offline) {
-    ok = d.ref.length >= 8;
-    b = `<div class="bn">Offline · enter the confirmation code from the customer’s M-Pesa SMS. It will be flagged for reconciliation.</div><div><label class="fl" for="ref">M-Pesa code</label><div class="inp"><input id="ref" placeholder="SJK4X9P2QA" value="${d.ref}" oninput="upd('ref',this.value.toUpperCase(),'ref')"></div></div>`;
+    ok = d.ref.length >= 8 && phonePresent;
+    b = `<div><label class="fl" for="phone">Customer phone for receipt</label><div class="inp"><input id="phone" inputmode="tel" value="${esc(d.phone)}" oninput="upd('phone',this.value,'phone')"></div>${phonePresent?"":"<small class=\"low\">Enter a phone number to complete M-Pesa.</small>"}</div><div class="bn">Offline · enter the confirmation code from the customer’s M-Pesa SMS. It will be flagged for reconciliation.</div><div><label class="fl" for="ref">M-Pesa code</label><div class="inp"><input id="ref" placeholder="SJK4X9P2QA" value="${esc(d.ref)}" oninput="upd('ref',this.value.toUpperCase(),'ref')"></div></div>`;
   } else {
-    ok = d.st == "ok";
-    b = `<div><label class="fl" for="phone">Customer phone</label><div class="inp"><input id="phone" inputmode="tel" value="${d.phone}" oninput="upd('phone',this.value,'phone')"></div></div>` + (ok ? `<div class="sum good"><span>Payment received</span><b>${d.ref}</b></div>` : `<button class="stk" ${d.st=="idle"?"":"disabled"} onclick="stk()">${d.st=="wait"?"Waiting for customer PIN…":"Send STK push"}</button>`);
+    ok = d.st == "ok" && phonePresent;
+    b = `<div><label class="fl" for="phone">Customer phone for receipt</label><div class="inp"><input id="phone" inputmode="tel" value="${esc(d.phone)}" ${d.st=="idle"?"":"readonly"} oninput="upd('phone',this.value,'phone')"></div>${phonePresent?"":"<small class=\"low\">Enter a phone number to send M-Pesa and print it on the receipt.</small>"}</div>` + (ok ? `<div class="sum good"><span>Payment received</span><b>${esc(d.ref)}</b></div>` : `<button class="stk" ${d.st=="idle"&&phonePresent?"":"disabled"} onclick="stk()">${d.st=="wait"?label("waitingPin"):label("sendStk")}</button>`);
   }
-  return `<div class="ov"><div class="mod"><div class="mh"><div><small>Amount due</small><h3>${kes(t)}</h3></div><button class="x" aria-label="Close" onclick="state.payment=null;render()">✕</button></div><div class="mt"><button class="${d.m=="cash"?"on":""}" onclick="upd('m','cash')">${IC.cash} Cash</button><button class="${d.m=="mpesa"?"on":""}" onclick="upd('m','mpesa')">${IC.phone} M-Pesa</button></div><div class="mb">${b}</div><div class="ft"><button class="ghost" onclick="state.payment=null;render()">Cancel</button><button class="pri" style="flex:2" ${ok?"":"disabled"} onclick="finish()">Complete sale</button></div></div></div>`;
+  return `<div class="ov"><div class="mod"><div class="mh"><div><small>Amount due</small><h3>${kes(t)}</h3></div><button class="x" aria-label="Close · Esc" onclick="state.payment=null;render()">✕</button></div><div class="mt"><button class="${d.m=="cash"?"on":""}" onclick="upd('m','cash')">${IC.cash} ${label("cash")}</button><button class="${d.m=="mpesa"?"on":""}" onclick="upd('m','mpesa')">${IC.phone} ${label("mpesa")}</button></div><div class="mb">${b}</div><div class="ft"><button class="ghost" onclick="state.payment=null;render()">${label("cancel")}</button><button class="pri" style="flex:2" ${ok?"":"disabled"} onclick="finish()">${label("completeSale")}</button></div></div></div>`;
 }
 
 function rcpt() {
   const s = state.receipt;
+  const receiptSettings = s.receiptSettings || state.shopSettings;
   const st = s.voided ? "Voided · stock restored" : s.m == "cash" ? "Cash received" : s.pend ? "M-Pesa · pending reconciliation" : "M-Pesa confirmed";
-  return `<div class="ov"><div class="rw"><div class="rok">${IC.ok}<div><b>${s.voided?"Sale voided":"Sale complete"}</b><small>${st}</small></div></div><div class="paper"><div class="c"><b style="font-size:1rem">CELLAR &amp; CO.</b><br>WINES &amp; SPIRITS<br><span class="m">Demo shop · Nairobi · PIN P000000000X</span></div><hr><div class="r"><span>${s.no}</span><span>${s.at.toLocaleString("en-KE",{dateStyle:"short",timeStyle:"short"})}</span></div><div class="r m"><span>${esc(s.user||"Cashier 1")}</span><span>Till ${s.tillNumber||1}</span></div><hr>${s.lines.map(l=>`<div><div class="r"><span>${esc(l.n)}</span><b>${(l.q*l.pr).toLocaleString()}</b></div><div class="m">${l.q} × ${l.pr.toLocaleString()} · ${esc(l.s)} · ${U[l.u]}</div></div>`).join("")}<hr>${s.discountAmount?`<div class="r m"><span>Owner-approved discount (${s.discountPercent}%)</span><span>− ${kes(s.discountAmount)}</span></div>`:""}<div class="r m"><span>Subtotal (excl. VAT)</span><span>${Math.round(s.t*100/116).toLocaleString()}</span></div><div class="r m"><span>VAT 16%</span><span>${Math.round(s.t*16/116).toLocaleString()}</span></div><div class="r tt"><span>TOTAL</span><span>${kes(s.t)}</span></div><div class="r m"><span>${s.m=="cash"?"Cash":"M-Pesa "+s.ref}</span><span>${s.m=="cash"?"Change "+(s.tend-s.t).toLocaleString():s.pend?"Pending":"Paid"}</span></div>${s.voided?`<div class="sum bad"><span>VOIDED</span><b>${esc(s.voidedBy||"Owner")}</b></div>`:""}<hr><div class="qr">eTIMS QR</div><div class="c m">Thank you · Drink responsibly · 18+</div></div><div class="ft">${s.voided?"":`<button class="ghost" onclick="requestSaleVoid('${s.no}')">Void sale</button>`}<button onclick="toast('Sent to printer · drawer opened (demo)')">Print receipt</button><button class="pri" onclick="state.receipt=null;render()">New sale</button></div></div></div>`;
+  const reprinting = state.receiptMode === "reprint";
+  const lines = s.lines.map(l => {
+    const gross = l.gross ?? l.q * l.pr;
+    const lineDiscount = l.lineDiscount || 0;
+    const net = l.net ?? gross - lineDiscount;
+    return `<div><div class="r"><span>${esc(l.n)}</span><b>${net.toLocaleString()}</b></div><div class="m">${l.q} × ${l.pr.toLocaleString()} · ${esc(l.s)} · ${U[l.u]}${lineDiscount?` · ${l.discountPercent}% line discount − ${kes(lineDiscount)}`:""}</div></div>`;
+  }).join("");
+  const footer = receiptSettings.receiptFooter.trim().replace(/\r?\n/g,"<br>");
+  return `<div class="ov"><div class="rw" style="--receipt-width:${Number(receiptSettings.paperWidth)}mm"><div class="rok">${IC.ok}<div><b>${reprinting?"Receipt ready":s.voided?"Sale voided":"Sale complete"}</b><small>${reprinting?"Last sale · reprint":""}${reprinting?" · ":""}${st}</small></div></div><div class="paper"><div class="c"><b class="receipt-shop-name">${esc(receiptSettings.name)}</b>${receiptSettings.receiptHeader.trim()?`<br>${esc(receiptSettings.receiptHeader).replace(/\r?\n/g,"<br>")}`:""}<br>${esc(receiptSettings.address)}<br><span class="m">KRA PIN ${esc(receiptSettings.kraPin)}</span></div><hr><div class="r"><span>${esc(s.no)}</span><span>${new Date(s.at).toLocaleString("en-KE",{dateStyle:"short",timeStyle:"short"})}</span></div><div class="r m"><span>${esc(s.user||"Cashier 1")}</span><span>Till ${s.tillNumber||1}</span></div>${s.m==="mpesa"&&s.phone?`<div class="r m"><span>Customer phone</span><span>${esc(s.phone)}</span></div>`:""}<hr>${lines}<hr>${s.lineDiscountAmount?`<div class="r m"><span>Line discounts</span><span>− ${kes(s.lineDiscountAmount)}</span></div>`:""}${s.billDiscountAmount?`<div class="r m"><span>Bill discount (${s.discountPercent}%)</span><span>− ${kes(s.billDiscountAmount)}</span></div>`:""}<div class="r m"><span>Subtotal${receiptSettings.vatEnabled?" (incl. VAT)":""}</span><span>${kes(s.subtotal)}</span></div><div class="r m"><span>Subtotal after discounts</span><span>${kes(s.t)}</span></div>${receiptSettings.vatEnabled?`<div class="r m"><span>VAT 16% (incl.)</span><span>${Math.round(s.t*16/116).toLocaleString()}</span></div>`:""}<div class="r tt"><span>TOTAL</span><span>${kes(s.t)}</span></div><div class="r m"><span>${s.m==="cash"?"Cash":"M-Pesa "+esc(s.ref||"")}</span><span>${s.m==="cash"?"Change "+(s.tend-s.t).toLocaleString():s.pend?"Pending":"Paid"}</span></div>${s.voided?`<div class="sum bad"><span>VOIDED</span><b>${esc(s.voidedBy||"Owner")}</b></div><div class="r m"><span>Reason</span><span>${esc(s.voidReason||"")}</span></div>`:""}<hr><div class="etims-receipt"><div class="qr">eTIMS<br>QR placeholder</div><div class="etims-receipt-fields"><b>eTIMS · demo preview</b><small>Control unit: ${esc(receiptSettings.controlUnitId)}</small><small>Serial: ${esc(receiptSettings.controlUnitSerial)}</small><small>Invoice: ${esc(s.no)}</small><small>Not submitted to KRA</small></div></div>${footer?`<hr><div class="c m receipt-footer">${footer}</div>`:""}</div><div class="ft">${!s.voided&&!reprinting?`<button class="ghost" onclick="requestSaleVoid('${esc(s.no)}')">${label("voidSale")}</button>`:""}<button onclick="toast('Receipt sent to printer (demo)')">${reprinting?label("reprintReceipt"):label("printReceipt")}</button><button class="pri" onclick="closeReceipt()">${reprinting?label("done"):label("newSale")}</button></div></div></div>`;
+}
+
+function discountView() {
+  const draft = state.discountModal;
+  if (!draft) return "";
+  const title = draft.scope === "bill" ? "Bill discount" : "Line discount";
+  const line = draft.scope === "line" ? state.cart[draft.index] : null;
+  const product = line ? state.products.find(item => item.id === line.id) : null;
+  return `<div class="ov"><section class="mod" role="dialog" aria-modal="true" aria-labelledby="discount-title"><div class="mh"><div><small>Discount controls</small><h3 id="discount-title">${title}</h3></div><button class="x" aria-label="Close · Esc" onclick="state.discountModal=null;render()">✕</button></div><div class="mb">${line?`<p>${esc(product?.n||"Item")} · ${line.q} ${U[line.u]}</p>`:`<p>Apply a percentage to the sale after line discounts.</p>`}<label class="fl" for="discount-percent">Discount percentage</label><div class="discount-field"><input id="discount-percent" type="number" min="0" max="100" step="0.5" inputmode="decimal" value="${esc(draft.percent)}" oninput="updateDiscountDraft(this.value)" onkeydown="if(event.key==='Enter')applyDiscount()"><b>%</b></div><small>Discounts above 5% require owner PIN approval.</small></div><div class="ft"><button onclick="state.discountModal=null;render()">Cancel</button><button class="pri" onclick="applyDiscount()">Apply discount</button></div></section></div>`;
+}
+
+function recallView() {
+  if (!state.recallOpen) return "";
+  const heldSales = heldForCurrentTill();
+  return `<div class="ov"><section class="mod" role="dialog" aria-modal="true" aria-labelledby="recall-title"><div class="mh"><div><small>${heldSales.length} sale${heldSales.length===1?"":"s"} on hold</small><h3 id="recall-title">Recall sale</h3></div><button class="x" aria-label="Close · Esc" onclick="state.recallOpen=false;render()">✕</button></div><div class="mb">${heldSales.length?`<div class="held-list">${heldSales.map(held=>`<div class="held-sale"><b>Hold #${held.id} · ${kes(held.total)}</b><small>${held.cart.reduce((sum,line)=>sum+line.q,0)} items · ${esc(held.heldBy)} · ${new Date(held.heldAt).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"})}</small><button class="pri" onclick="recallHeldSale(${held.id})">Recall</button><button class="line-void" onclick="discardHeldSale(${held.id})">Discard</button></div>`).join("")}</div>`:`<p class="mu">No held sales. Use Hold sale from the cart to save a basket.</p>`}</div><div class="ft"><button onclick="state.recallOpen=false;render()">Close</button></div></section></div>`;
 }
 
 // Master Render Function
@@ -2110,6 +3325,7 @@ function render() {
   if (!state.cart.length) state.cartOpen = false;
   const curScreen = SCREENS[state.view] || SCREENS.sell;
   const screensList = visibleScreens();
+  const pendingSync = syncPendingCount();
 
   $("app").innerHTML = `
 <div class="app-shell">
@@ -2125,7 +3341,7 @@ function render() {
       ${screensList.map(s => `
         <button class="nav-btn ${state.view === s.id ? "on" : ""}" onclick="go('${s.id}')">
           ${NAV_ICONS[s.id] || ""}
-          <span>${s.label}</span>
+          <span>${label(s.id)}</span>
         </button>
       `).join("")}
     </nav>
@@ -2150,13 +3366,14 @@ function render() {
       </div>
       <div class="rt">
         <span class="signed-in-user">${state.currentUser.name} · ${state.currentUser.role === "owner" ? "Owner" : `Till ${state.till.tillNumber}`}</span>
+        <button class="pill sync-top ${pendingSync?"wn":""}" onclick="go('sync')">Sync · ${pendingSync}</button>
         <button class="pill ${state.offline ? "wn" : "ok"}" onclick="tOff()">● ${state.offline ? "Offline" : "Online"}</button>
         <button class="pill" onclick="tTheme()">Light / Dark</button>
         <button class="pill" onclick="logout()">Sign out</button>
       </div>
     </header>
 
-    ${state.offline ? `<div class="bn">Offline mode · sales are saved on this device · ${state.syncCount} waiting to sync</div>` : ""}
+    ${state.offline || pendingSync ? `<div class="sync-banner" role="status"><div><b>${state.offline?"Offline mode":"Records awaiting sync"}</b><small>${state.offline?"New sales and stock movements are saved on this device.":"Connection is available; queued records need a retry."}</small></div><strong>${pendingSync} pending</strong><button onclick="go('sync')">Open sync queue</button></div>` : ""}
 
     <main>
       ${renderScreen(state.view)}
@@ -2168,18 +3385,63 @@ function render() {
     ${screensList.map(s => `
       <button class="b-nav-btn ${state.view === s.id ? "on" : ""}" onclick="go('${s.id}')">
         ${NAV_ICONS[s.id] || ""}
-        <span>${s.label}</span>
+        <span>${label(s.id)}</span>
       </button>
     `).join("")}
   </nav>
 </div>
 ${state.payment ? pay() : ""}
 ${state.receipt ? rcpt() : ""}
+${state.discountModal ? discountView() : ""}
+${state.recallOpen ? recallView() : ""}
 ${state.productEditor ? productEditorView() : ""}
 ${state.tillFlow ? tillFlowView() : ""}
 ${state.shiftReceipt ? shiftRcpt() : ""}
-${state.approval ? ownerApprovalView() : ""}`;
+${state.whatsappPreviewSupplier ? whatsappPreviewView() : ""}
+${state.approval ? ownerApprovalView() : ""}
+${state.currentUser.role === "owner" && !state.demoGuide.open ? `<button class="demo-guide-fab" aria-label="Open demo guide" title="Walk through the 8-step demo" onclick="openDemoGuide()">${IC.guide}<span>Demo guide</span></button>` : ""}
+${state.demoGuide.open ? demoGuideView() : ""}
+${state.resetDemoConfirm ? demoResetDialog() : ""}`;
+  if (state.demoGuide.open) updateDemoSpotlight();
 }
 
+function handleGlobalShortcuts(event) {
+  if (event.key === "Escape") {
+    if (state.resetDemoConfirm) cancelDemoReset();
+    else if (state.demoGuide.open) closeDemoGuide();
+    else if (state.whatsappPreviewSupplier) closeWhatsAppPreview();
+    else if (state.approval) cancelOwnerApproval();
+    else if (state.payment) { state.payment = null; render(); }
+    else if (state.receipt) closeReceipt();
+    else if (state.discountModal) { state.discountModal = null; render(); }
+    else if (state.recallOpen) { state.recallOpen = false; render(); }
+    else if (state.productEditor) closeProductEditor();
+    else if (state.tillFlow) cancelTillFlow();
+    else if (state.shiftReceipt) { state.shiftReceipt = null; render(); }
+    else if (state.cartOpen) { state.cartOpen = false; render(); }
+    else return;
+    event.preventDefault();
+    return;
+  }
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (event.key === "F2") {
+    event.preventDefault();
+    if (!state.currentUser) return;
+    if (state.payment || state.receipt || state.approval || state.discountModal || state.recallOpen || state.whatsappPreviewSupplier) return;
+    if (state.view !== "sell" || state.cartOpen) {
+      state.view = "sell";
+      state.cartOpen = false;
+      render();
+    }
+    keep("q");
+    return;
+  }
+  if (event.key === "F4") {
+    event.preventDefault();
+    if (state.currentUser && state.view === "sell" && !state.payment && !state.receipt && !state.approval && !state.discountModal && !state.recallOpen) charge();
+  }
+}
+
+if (document.addEventListener) document.addEventListener("keydown", handleGlobalShortcuts);
 render();
 </script></body></html>

@@ -98,6 +98,7 @@ async function runCheckout(page, width) {
     const voidInvoice = await desktop.evaluate(() => state.receipt.no);
     await desktop.getByRole('button', { name: 'Void sale' }).click();
     assert.match(await desktop.locator('#approval-title').innerText(), /Void sale/);
+    await desktop.locator('#approval-reason').fill('Duplicate test sale');
     await desktop.locator('#approval-pin').fill('1111');
     await desktop.getByRole('button', { name: 'Approve & continue' }).click();
     await desktop.getByText('Owner PIN is incorrect.').waitFor();
@@ -185,7 +186,9 @@ async function runCheckout(page, width) {
     const mpesaSale = Math.round(retailPrice * 0.9);
     await tillPage.getByRole('button', { name: 'Age verified' }).click();
     await tillPage.locator('.pt').filter({ hasText: 'Tusker Lager' }).click();
-    await tillPage.getByRole('button', { name: 'Request 10% discount · Owner approval' }).click();
+    await tillPage.getByRole('button', { name: 'Bill discount' }).click();
+    await tillPage.locator('#discount-percent').fill('10');
+    await tillPage.getByRole('button', { name: 'Apply discount' }).click();
     await tillPage.locator('#approval-pin').fill('2222');
     await tillPage.getByRole('button', { name: 'Approve & continue' }).click();
     await tillPage.getByText('Owner PIN is incorrect.').waitFor();
@@ -222,8 +225,8 @@ async function runCheckout(page, width) {
     await tillPage.getByRole('button', { name: 'Sign out' }).click();
     await signIn(tillPage, '1234');
     await tillPage.getByRole('button', { name: 'Reports', exact: true }).click();
-    assert.match(await tillPage.locator('.dash').innerText(), /M-Pesa short in shift close test/, 'Dashboard should show the latest shift variance reason');
-    await tillPage.getByRole('complementary', { name: 'Main Navigation' }).getByRole('button', { name: 'Audit log', exact: true }).click();
+    assert.match(await tillPage.locator('.report-page').first().innerText(), /Sales by day/, 'Reports should open with its sales-by-day chart');
+    await tillPage.locator('.side-nav').getByRole('button', { name: 'Audit log', exact: true }).click();
     await tillPage.getByRole('combobox', { name: 'Filter by action' }).selectOption({ label: 'Discount' });
     assert.match(await tillPage.locator('.audit-list').innerText(), /Tusker Lager|sale/, 'Audit log action filter should show discount events');
     await tillPage.getByRole('button', { name: 'Sign out' }).click();
